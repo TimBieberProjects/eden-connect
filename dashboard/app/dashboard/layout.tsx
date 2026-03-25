@@ -9,6 +9,8 @@ const NAV = [
   { href: '/dashboard/baseline',  label: 'Baseline Surveys',  icon: '🏘' },
   { href: '/dashboard/quarterly', label: 'Quarterly Reports', icon: '📋' },
   { href: '/dashboard/ai-query',  label: 'AI Health Query',   icon: '🤖' },
+  { href: '/dashboard/clinical',  label: 'Clinical Copilot',  icon: '🩺' },
+  { href: '/dashboard/patients',  label: 'Patient Records',   icon: '👤' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
