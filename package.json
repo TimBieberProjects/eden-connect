@@ -1,0 +1,18 @@
+{
+  "name": "eden-connect",
+  "version": "1.0.0",
+  "description": "EDEN Connect — Community Health Platform, Eastern Highlands PNG",
+  "main": "read-sheet.js",
+  "scripts": {
+    "read-sheet": "node read-sheet.js",
+    "migrate": "node migrate.js",
+    "sync": "node src/sync/index.js",
+    "sync:dry": "node src/sync/index.js --dry-run",
+    "dashboard": "cd dashboard && npm run dev"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "googleapis": "^144.0.0",
+    "pg": "^8.20.0"
+  }
+}
