@@ -90,7 +90,7 @@ export default function MapPage() {
   // Add/refresh markers whenever map + communities are ready
   const addMarkers = useCallback((comms: Community[], mapboxgl: any, map: any) => {
     // Remove existing markers
-    markersRef.current.forEach(m => m.remove());
+    markersRef.current.forEach(({ marker }) => marker.remove());
     markersRef.current.clear();
 
     comms.forEach((c, idx) => {
