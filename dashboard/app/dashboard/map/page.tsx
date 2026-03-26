@@ -247,7 +247,7 @@ export default function MapPage() {
               <div className="text-xl font-bold" style={{ color: activeFilter === key ? config.color : config.color }}>{counts[key]}</div>
               <div className={`text-xs mt-0.5 flex items-center gap-1 justify-center ${activeFilter === key ? 'text-slate-300' : 'text-slate-500'}`}>
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: config.color }} />
-                {key === 'kicked_off' ? 'Kicked Off' : key === 'in_progress' ? 'In Progress' : 'Achieved'}
+                {key === 'kicked_off' ? 'Kicked Off' : key === 'in_progress' ? 'In Progress' : 'Healthy Village'}
               </div>
             </button>
           ))}
