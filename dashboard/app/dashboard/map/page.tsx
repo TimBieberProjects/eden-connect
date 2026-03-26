@@ -24,11 +24,26 @@ const STAGE_CONFIG = {
   achieved:    { label: 'Health Village Achieved',  color: '#22c55e', bg: 'bg-green-100',  text: 'text-green-700',  border: 'border-green-200',  dot: 'bg-green-500'  },
 };
 
-const PLACEHOLDER_PHOTOS: Record<string, string[]> = {
-  achieved:    ['https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400', 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400'],
-  in_progress: ['https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400', 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400'],
-  kicked_off:  ['https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400', 'https://images.unsplash.com/photo-1542601906897-ecd28040e1d1?w=400'],
-};
+// Cycling dummy photos — PNG highlands / community health themed
+const DUMMY_PHOTOS = [
+  'https://images.unsplash.com/photo-1542601906897-ecd28040e1d1?w=600&q=80',
+  'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=600&q=80',
+  'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=600&q=80',
+  'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80',
+  'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&q=80',
+  'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=600&q=80',
+  'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?w=600&q=80',
+  'https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?w=600&q=80',
+  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80',
+  'https://images.unsplash.com/photo-1504813184591-01572f98c85f?w=600&q=80',
+  'https://images.unsplash.com/photo-1580281657702-257584239a55?w=600&q=80',
+  'https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=600&q=80',
+];
+
+function getPhoto(community: Community, index: number): string {
+  if (community.photo_url) return community.photo_url;
+  return DUMMY_PHOTOS[index % DUMMY_PHOTOS.length];
+}
 
 type AddFormData = {
   name: string; province: string; district: string;
@@ -78,23 +93,41 @@ export default function MapPage() {
     markersRef.current.forEach(m => m.remove());
     markersRef.current.clear();
 
-    comms.forEach((c) => {
+    comms.forEach((c, idx) => {
       const cfg = STAGE_CONFIG[c.che_stage];
+
+      // Outer wrapper — large transparent hit area prevents hover flicker
       const el = document.createElement('div');
       el.style.cssText = `
-        width:16px; height:16px;
+        width:30px; height:30px;
+        display:flex; align-items:center; justify-content:center;
+        cursor:pointer;
+      `;
+
+      // Inner dot — only this scales, so cursor never leaves the hit area
+      const dot = document.createElement('div');
+      dot.style.cssText = `
+        width:14px; height:14px;
         background:${cfg.color};
         border:2.5px solid white;
         border-radius:50%;
-        cursor:pointer;
-        box-shadow:0 2px 6px rgba(0,0,0,0.35);
+        box-shadow:0 2px 6px rgba(0,0,0,0.4);
         transition:transform 0.15s, box-shadow 0.15s;
+        pointer-events:none;
       `;
-      el.onmouseenter = () => { el.style.transform = 'scale(1.7)'; el.style.boxShadow = '0 3px 10px rgba(0,0,0,0.4)'; };
-      el.onmouseleave = () => { el.style.transform = 'scale(1)'; el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.35)'; };
+      el.appendChild(dot);
+
+      el.addEventListener('mouseenter', () => {
+        dot.style.transform = 'scale(1.6)';
+        dot.style.boxShadow = '0 3px 12px rgba(0,0,0,0.5)';
+      });
+      el.addEventListener('mouseleave', () => {
+        dot.style.transform = 'scale(1)';
+        dot.style.boxShadow = '0 2px 6px rgba(0,0,0,0.4)';
+      });
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        setSelected(c);
+        setSelected({ ...c, _photoIndex: idx } as any);
         setShowAddForm(false);
         map.flyTo({ center: [c.longitude, c.latitude], zoom: 11, duration: 700 });
       });
@@ -201,7 +234,7 @@ export default function MapPage() {
   }
 
   const selectedPhoto = selected
-    ? (selected.photo_url || PLACEHOLDER_PHOTOS[selected.che_stage][Math.floor(selected.name.length % 2)])
+    ? getPhoto(selected, (selected as any)._photoIndex ?? selected.name.length)
     : null;
 
   const cfg = selected ? STAGE_CONFIG[selected.che_stage] : null;
