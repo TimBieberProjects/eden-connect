@@ -24,18 +24,18 @@ const STAGE_CONFIG = {
   achieved:    { label: 'Health Village Achieved',  color: '#22c55e', bg: 'bg-green-100',  text: 'text-green-700',  border: 'border-green-200',  dot: 'bg-green-500'  },
 };
 
-// Cycling dummy photos — actual Papua New Guinea photos from Unsplash
+// Cycling dummy photos — real Papua New Guinea photos (Wikimedia Commons, CC-licensed)
 const DUMMY_PHOTOS = [
-  'https://source.unsplash.com/akRXLuroBCU/600x400', // Eastern Highlands community gathering
-  'https://source.unsplash.com/oVLnxxHtuAg/600x400', // Eastern Highlands mountain landscape
-  'https://source.unsplash.com/tGfB7t4L1JY/600x400', // Goroka Sing Sing traditional dress
-  'https://source.unsplash.com/2d6UohbZWS0/600x400', // PNG community group on grass
-  'https://source.unsplash.com/iYDi7K7Ks00/600x400', // Kiriwina community member
-  'https://source.unsplash.com/GOIR5V_OH-k/600x400', // PNG Sing Sing dancer
-  'https://source.unsplash.com/XD0wwv2DDNg/600x400', // Sepik River community
-  'https://source.unsplash.com/H23hvjgZo8I/600x400', // PNG coastal island
-  'https://source.unsplash.com/tDJyR7GaxYI/600x400', // PNG traditional dance
-  'https://source.unsplash.com/3JMYDDJsEew/600x400', // PNG portrait
+  'https://upload.wikimedia.org/wikipedia/commons/c/cc/Village_in_Eastern_Highlands_Province_Papua_New_Guinea.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/d/d4/Papua_New_Guinea_1991-004_Village_in_Asaro_Valley_%2833604970041%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/f/f0/Village_festival%2C_Enga_Province_Papua_New_Guinea_%2848635127996%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/0/0d/Leisure_%28Tukusunda%2C_Papua_New_Guinea%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/6/6d/DPAA_celebrates_with_a_village_in_Papua_New_Guinea_%287434398%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/4/47/DPAA_celebrates_with_a_village_in_Papua_New_Guinea_%287434401%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/4/42/DPAA_celebrates_with_a_village_in_Papua_New_Guinea_%287434406%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/f/f4/DPAA_celebrates_with_a_village_in_Papua_New_Guinea_%287434409%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/b/b0/Papua_New_Guinea_1991-014_Raun_Raun_Theatre%2C_Goroka%2C_Eastern_Highlands_Province_%2833694395136%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/0/06/Papua_New_Guinea_1991-002_Picking_Coffee_Beans_Bobiufa_Eastern_Highlands_Province_%2835mm_Slide%29_%2832919963013%29.jpg',
 ];
 
 function getPhoto(community: Community, index: number): string {
