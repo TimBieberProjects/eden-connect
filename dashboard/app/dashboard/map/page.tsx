@@ -24,20 +24,18 @@ const STAGE_CONFIG = {
   achieved:    { label: 'Health Village Achieved',  color: '#22c55e', bg: 'bg-green-100',  text: 'text-green-700',  border: 'border-green-200',  dot: 'bg-green-500'  },
 };
 
-// Cycling dummy photos — PNG highlands / community health themed
+// Cycling dummy photos — actual Papua New Guinea photos from Unsplash
 const DUMMY_PHOTOS = [
-  'https://images.unsplash.com/photo-1542601906897-ecd28040e1d1?w=600&q=80',
-  'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=600&q=80',
-  'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=600&q=80',
-  'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80',
-  'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&q=80',
-  'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=600&q=80',
-  'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?w=600&q=80',
-  'https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?w=600&q=80',
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80',
-  'https://images.unsplash.com/photo-1504813184591-01572f98c85f?w=600&q=80',
-  'https://images.unsplash.com/photo-1580281657702-257584239a55?w=600&q=80',
-  'https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=600&q=80',
+  'https://source.unsplash.com/akRXLuroBCU/600x400', // Eastern Highlands community gathering
+  'https://source.unsplash.com/oVLnxxHtuAg/600x400', // Eastern Highlands mountain landscape
+  'https://source.unsplash.com/tGfB7t4L1JY/600x400', // Goroka Sing Sing traditional dress
+  'https://source.unsplash.com/2d6UohbZWS0/600x400', // PNG community group on grass
+  'https://source.unsplash.com/iYDi7K7Ks00/600x400', // Kiriwina community member
+  'https://source.unsplash.com/GOIR5V_OH-k/600x400', // PNG Sing Sing dancer
+  'https://source.unsplash.com/XD0wwv2DDNg/600x400', // Sepik River community
+  'https://source.unsplash.com/H23hvjgZo8I/600x400', // PNG coastal island
+  'https://source.unsplash.com/tDJyR7GaxYI/600x400', // PNG traditional dance
+  'https://source.unsplash.com/3JMYDDJsEew/600x400', // PNG portrait
 ];
 
 function getPhoto(community: Community, index: number): string {
