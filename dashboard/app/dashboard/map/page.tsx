@@ -54,9 +54,8 @@ type AddFormData = {
 export default function MapPage() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  const mapboxRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
-  const mapLoadedRef = useRef(false);
+  const [mapboxgl, setMapboxgl] = useState<any>(null);
 
   const [communities, setCommunities] = useState<Community[]>([]);
   const [selected, setSelected] = useState<Community | null>(null);
@@ -78,18 +77,18 @@ export default function MapPage() {
     achieved:    communities.filter(c => c.che_stage === 'achieved').length,
   };
 
-  // Load communities
+  // Load mapboxgl + communities in parallel
   useEffect(() => {
+    import('mapbox-gl').then((mod) => setMapboxgl(mod.default ?? mod));
     supabase.from('community_profiles').select('*')
       .then(({ data, error }) => {
         if (error) console.error('Failed to load communities:', error);
-        if (data && data.length > 0) setCommunities(data);
+        if (data?.length) setCommunities(data);
       });
   }, []);
 
-  // Add/refresh markers whenever map + communities are ready
-  const addMarkers = useCallback((comms: Community[], mapboxgl: any, map: any) => {
-    // Remove existing markers
+  // Init map once both mapboxgl AND communities are ready
+  const addMarkers = useCallback((comms: Community[], mgl: any, map: any) => {
     markersRef.current.forEach(({ marker }) => marker.remove());
     markersRef.current.clear();
 
@@ -140,57 +139,32 @@ export default function MapPage() {
     });
   }, []);
 
-  // Init map
+  // Init map once both mapboxgl lib and communities data are ready
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapboxgl || !communities.length || !mapContainer.current || mapRef.current) return;
 
-    import('mapbox-gl').then((mod) => {
-      const mapboxgl = mod.default;
-      mapboxRef.current = mapboxgl;
-      mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
+    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
-      if (mapRef.current) return;
-
-      const map = new mapboxgl.Map({
-        container: mapContainer.current!,
-        style: 'mapbox://styles/mapbox/satellite-streets-v12',
-        center: [145.15, -6.1],
-        zoom: 7.2,
-        attributionControl: false,
-      });
-
-      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
-      map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
-      mapRef.current = map;
-
-      map.on('load', () => {
-        mapLoadedRef.current = true;
-        if (communities.length > 0) {
-          addMarkers(communities, mapboxgl, map);
-        }
-      });
-
-      map.on('click', () => {
-        setSelected(null);
-      });
+    const map = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      center: [145.15, -6.1],
+      zoom: 7.2,
+      attributionControl: false,
     });
 
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-        mapLoadedRef.current = false;
-        markersRef.current.clear();
-      }
-    };
-  }, []);
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+    mapRef.current = map;
 
-  // Add markers once communities load (if map already ready)
-  useEffect(() => {
-    if (communities.length > 0 && mapLoadedRef.current && mapRef.current && mapboxRef.current) {
-      addMarkers(communities, mapboxRef.current, mapRef.current);
-    }
-  }, [communities, addMarkers]);
+    map.on('load', () => addMarkers(communities, mapboxgl, map));
+    map.on('click', () => setSelected(null));
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markersRef.current.clear();
+    };
+  }, [mapboxgl, communities, addMarkers]);
 
   // Apply filter + search to markers
   useEffect(() => {
