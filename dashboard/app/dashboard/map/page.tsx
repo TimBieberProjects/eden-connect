@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 type Community = {
@@ -54,8 +54,9 @@ type AddFormData = {
 export default function MapPage() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
+  const mglRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
-  const [mapboxgl, setMapboxgl] = useState<any>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const [communities, setCommunities] = useState<Community[]>([]);
   const [selected, setSelected] = useState<Community | null>(null);
@@ -77,9 +78,8 @@ export default function MapPage() {
     achieved:    communities.filter(c => c.che_stage === 'achieved').length,
   };
 
-  // Load mapboxgl + communities in parallel
+  // Load communities
   useEffect(() => {
-    import('mapbox-gl').then((mod) => setMapboxgl(mod.default ?? mod));
     supabase.from('community_profiles').select('*')
       .then(({ data, error }) => {
         if (error) console.error('Failed to load communities:', error);
@@ -87,43 +87,56 @@ export default function MapPage() {
       });
   }, []);
 
-  // Init map once both mapboxgl AND communities are ready
-  const addMarkers = useCallback((comms: Community[], mgl: any, map: any) => {
+  // Init map once on mount — store mapboxgl in ref to avoid stale closures
+  useEffect(() => {
+    if (!mapContainer.current) return;
+    let map: any;
+
+    import('mapbox-gl').then((mod) => {
+      if (!mapContainer.current) return;
+      const mgl = mod.default;
+      mglRef.current = mgl;
+      mgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
+
+      map = new mgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        center: [145.15, -6.1],
+        zoom: 7.2,
+        attributionControl: false,
+      });
+      map.addControl(new mgl.NavigationControl({ showCompass: false }), 'top-right');
+      map.on('click', () => setSelected(null));
+      mapRef.current = map;
+      map.on('load', () => setMapReady(true));
+    });
+
+    return () => {
+      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; markersRef.current.clear(); }
+    };
+  }, []);
+
+  // Add markers whenever map is ready or communities change
+  useEffect(() => {
+    const mgl = mglRef.current;
+    const map = mapRef.current;
+    if (!mgl || !map || !communities.length) return;
+
     markersRef.current.forEach(({ marker }) => marker.remove());
     markersRef.current.clear();
 
-    comms.forEach((c, idx) => {
+    communities.forEach((c, idx) => {
       const cfg = STAGE_CONFIG[c.che_stage];
 
-      // Outer wrapper — large transparent hit area prevents hover flicker
       const el = document.createElement('div');
-      el.style.cssText = `
-        width:30px; height:30px;
-        display:flex; align-items:center; justify-content:center;
-        cursor:pointer;
-      `;
+      el.style.cssText = `width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;`;
 
-      // Inner dot — only this scales, so cursor never leaves the hit area
       const dot = document.createElement('div');
-      dot.style.cssText = `
-        width:14px; height:14px;
-        background:${cfg.color};
-        border:2.5px solid white;
-        border-radius:50%;
-        box-shadow:0 2px 6px rgba(0,0,0,0.4);
-        transition:transform 0.15s, box-shadow 0.15s;
-        pointer-events:none;
-      `;
+      dot.style.cssText = `width:14px;height:14px;background:${cfg.color};border:2.5px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:transform 0.15s,box-shadow 0.15s;pointer-events:none;`;
       el.appendChild(dot);
 
-      el.addEventListener('mouseenter', () => {
-        dot.style.transform = 'scale(1.6)';
-        dot.style.boxShadow = '0 3px 12px rgba(0,0,0,0.5)';
-      });
-      el.addEventListener('mouseleave', () => {
-        dot.style.transform = 'scale(1)';
-        dot.style.boxShadow = '0 2px 6px rgba(0,0,0,0.4)';
-      });
+      el.addEventListener('mouseenter', () => { dot.style.transform = 'scale(1.6)'; dot.style.boxShadow = '0 3px 12px rgba(0,0,0,0.5)'; });
+      el.addEventListener('mouseleave', () => { dot.style.transform = 'scale(1)'; dot.style.boxShadow = '0 2px 6px rgba(0,0,0,0.4)'; });
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         setSelected({ ...c, _photoIndex: idx } as any);
@@ -131,40 +144,10 @@ export default function MapPage() {
         map.flyTo({ center: [c.longitude, c.latitude], zoom: 11, duration: 700 });
       });
 
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([c.longitude, c.latitude])
-        .addTo(map);
-
+      const marker = new mgl.Marker(el).setLngLat([c.longitude, c.latitude]).addTo(map);
       markersRef.current.set(c.id, { marker, el, community: c });
     });
-  }, []);
-
-  // Init map once both mapboxgl lib and communities data are ready
-  useEffect(() => {
-    if (!mapboxgl || !communities.length || !mapContainer.current || mapRef.current) return;
-
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
-
-    const map = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: [145.15, -6.1],
-      zoom: 7.2,
-      attributionControl: false,
-    });
-
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
-    mapRef.current = map;
-
-    map.on('load', () => addMarkers(communities, mapboxgl, map));
-    map.on('click', () => setSelected(null));
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-      markersRef.current.clear();
-    };
-  }, [mapboxgl, communities, addMarkers]);
+  }, [mapReady, communities]);
 
   // Apply filter + search to markers
   useEffect(() => {
