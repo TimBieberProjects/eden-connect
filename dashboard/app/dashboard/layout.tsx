@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 const LockIcon = () => (
-  <svg className="w-3 h-3 text-slate-600 ml-auto flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+  <svg className="w-3 h-3 text-slate-300 ml-auto flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
     <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
   </svg>
 );
@@ -79,59 +79,73 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     pathname.startsWith('/dashboard/patients') ? 'Patient Records' :
     'Dashboard';
 
+  const navItem = (href: string, label: string, icon: React.ReactNode, locked = false) => {
+    const active = pathname === href || (href !== '/dashboard/map' && pathname.startsWith(href));
+    return (
+      <Link
+        key={href}
+        href={href}
+        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+          active
+            ? 'bg-indigo-50 text-indigo-700'
+            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+        }`}
+      >
+        <span className={active ? 'text-indigo-600' : 'text-slate-400'}>{icon}</span>
+        <span className="flex-1">{label}</span>
+        {locked && !active && <LockIcon />}
+      </Link>
+    );
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
-      <aside className="w-60 bg-slate-900 text-white flex flex-col flex-shrink-0 fixed h-full z-20">
+      <aside className="w-60 bg-white border-r border-slate-100 flex flex-col flex-shrink-0 fixed h-full z-20">
+
         {/* Brand */}
-        <div className="px-5 py-5 border-b border-slate-800">
+        <div className="px-5 py-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </div>
             <div>
-              <div className="font-semibold text-sm text-white">EDEN Connect</div>
+              <div className="font-semibold text-sm text-slate-900">EDEN Connect</div>
               <div className="text-xs text-slate-400">Eastern Highlands PNG</div>
             </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto flex flex-col">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider px-3 mb-2">Platform</p>
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">Platform</p>
 
           {/* Community Map */}
-          <Link
-            href="/dashboard/map"
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-              pathname === '/dashboard/map'
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
-            }`}
-          >
+          {navItem('/dashboard/map', 'Community Map', (
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
-            <span className="flex-1">Community Map</span>
-          </Link>
+          ))}
 
-          {/* Surveys & Reports — collapsible group */}
+          {/* Surveys & Reports — collapsible */}
           <button
             onClick={() => setSurveysOpen(o => !o)}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
               surveysActive
-                ? 'bg-slate-800 text-white'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                ? 'bg-indigo-50 text-indigo-700'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
             }`}
           >
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+            <span className={surveysActive ? 'text-indigo-600' : 'text-slate-400'}>
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </span>
             <span className="flex-1 text-left">Surveys & Reports</span>
             <svg
-              className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${surveysOpen ? 'rotate-180' : ''}`}
+              className={`w-3.5 h-3.5 flex-shrink-0 text-slate-300 transition-transform ${surveysOpen ? 'rotate-180' : ''}`}
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -139,7 +153,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
 
           {surveysOpen && (
-            <div className="ml-3 pl-3 border-l border-slate-700 space-y-0.5">
+            <div className="ml-3 pl-3 border-l border-slate-100 space-y-0.5">
               {SURVEYS_ITEMS.map(({ href, label, icon, locked }) => {
                 const active = pathname === href || pathname.startsWith(href);
                 return (
@@ -148,11 +162,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href={href}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       active
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                     }`}
                   >
-                    {icon}
+                    <span className={active ? 'text-indigo-600' : 'text-slate-400'}>{icon}</span>
                     <span className="flex-1">{label}</span>
                     {locked && !active && <LockIcon />}
                   </Link>
@@ -162,66 +176,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
 
           {/* Clinical Copilot */}
-          <Link
-            href="/dashboard/clinical"
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-              pathname.startsWith('/dashboard/clinical')
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
-            }`}
-          >
+          {navItem('/dashboard/clinical', 'Clinical Copilot', (
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
-            <span className="flex-1">Clinical Copilot</span>
-            {!pathname.startsWith('/dashboard/clinical') && <LockIcon />}
-          </Link>
+          ), true)}
 
-          {/* Patient Records — pinned to bottom */}
-          <div className="flex-1" />
-          <div className="border-t border-slate-800 pt-2 mt-2">
-            <Link
-              href="/dashboard/patients"
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname.startsWith('/dashboard/patients')
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
-              }`}
-            >
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span className="flex-1">Patient Records</span>
-              {!pathname.startsWith('/dashboard/patients') && <LockIcon />}
-            </Link>
-          </div>
+          {/* Patient Records */}
+          {navItem('/dashboard/patients', 'Patient Records', (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          ), true)}
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-slate-800">
+        <div className="px-3 py-4 border-t border-slate-100">
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
             <span>Sign out</span>
           </button>
-          <p className="text-xs text-slate-600 px-3 mt-3">Evolved AI · MAI Canada</p>
+          <p className="text-xs text-slate-300 px-3 mt-3">Evolved AI · MAI Canada</p>
         </div>
       </aside>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col ml-60">
         {/* Top bar */}
-        <header className="h-14 bg-white border-b border-slate-200 flex items-center px-8 flex-shrink-0 sticky top-0 z-10">
+        <header className="h-14 bg-white border-b border-slate-100 flex items-center px-8 flex-shrink-0 sticky top-0 z-10">
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-900 font-medium">{pageLabel}</span>
+            <span className="text-slate-900 font-semibold">{pageLabel}</span>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-medium border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+            <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-medium border border-emerald-100">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
               Live
             </span>
           </div>
