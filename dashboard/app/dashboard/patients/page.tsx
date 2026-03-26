@@ -411,22 +411,61 @@ function SoapBlock({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+const EMPTY_FORM = { firstName: '', lastName: '', dob: '', sex: '', village: '', district: '', province: '', phone: '', guardian: '', bloodType: '', allergies: '', conditions: '', medications: '' };
+
 export default function PatientsPage() {
+  const [patients, setPatients] = useState<Patient[]>(PATIENTS);
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'visits' | 'ai'>('overview');
   const [expandedVisit, setExpandedVisit] = useState<number | null>(0);
   const [rxLoading, setRxLoading] = useState(false);
   const [rxChecked, setRxChecked] = useState(false);
+  const [showNewPatient, setShowNewPatient] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
 
-  const filtered = PATIENTS.filter(
+  const filtered = patients.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.village.toLowerCase().includes(search.toLowerCase()) ||
       p.district.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const patient = PATIENTS.find((p) => p.id === selectedId) ?? null;
+  const patient = patients.find((p) => p.id === selectedId) ?? null;
+
+  function handleAddPatient(e: React.FormEvent) {
+    e.preventDefault();
+    const name = `${form.firstName} ${form.lastName}`.trim();
+    const initials = `${form.firstName[0] ?? ''}${form.lastName[0] ?? ''}`.toUpperCase();
+    const dobDate = form.dob ? new Date(form.dob) : null;
+    const ageYrs = dobDate ? Math.floor((Date.now() - dobDate.getTime()) / (365.25 * 24 * 3600 * 1000)) : 0;
+    const newPatient: Patient = {
+      id: Date.now().toString(),
+      name, initials,
+      age: ageYrs > 0 ? String(ageYrs) : '—',
+      sex: form.sex || '—',
+      dob: form.dob || '—',
+      village: form.village || '—',
+      district: form.district || '—',
+      province: form.province || '—',
+      phone: form.phone || undefined,
+      guardian: form.guardian || undefined,
+      bloodType: form.bloodType || '—',
+      allergies: form.allergies ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [],
+      conditions: form.conditions ? form.conditions.split(',').map(s => s.trim()).filter(Boolean) : [],
+      medications: form.medications ? form.medications.split(',').map(s => s.trim()).filter(Boolean) : [],
+      visits: [],
+      aiSummary: 'No visits recorded yet. AI summary will be generated after the first consultation.',
+      communityStats: { topConditions: [], malariaPrevalence: '—', malnutritionRate: '—', activeCases: 0 },
+      rxCheck: 'No medications to review yet.',
+      lastTriage: 'GREEN',
+    };
+    setPatients(prev => [newPatient, ...prev]);
+    setSelectedId(newPatient.id);
+    setActiveTab('overview');
+    setForm(EMPTY_FORM);
+    setShowNewPatient(false);
+  }
 
   function handleSelectPatient(id: string) {
     setSelectedId(id);
@@ -448,8 +487,99 @@ export default function PatientsPage() {
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-slate-50">
+      {/* ── New Patient Form Panel ────────────────────────────────────────────── */}
+      {showNewPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="font-semibold text-slate-900">New Patient</h2>
+              <button onClick={() => setShowNewPatient(false)} className="text-slate-400 hover:text-slate-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={handleAddPatient} className="overflow-y-auto p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">First Name *</label>
+                  <input required value={form.firstName} onChange={e => setForm(f => ({...f, firstName: e.target.value}))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Last Name *</label>
+                  <input required value={form.lastName} onChange={e => setForm(f => ({...f, lastName: e.target.value}))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Date of Birth</label>
+                  <input type="date" value={form.dob} onChange={e => setForm(f => ({...f, dob: e.target.value}))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Sex</label>
+                  <select value={form.sex} onChange={e => setForm(f => ({...f, sex: e.target.value}))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none text-slate-700">
+                    <option value="">— Select —</option>
+                    <option>Male</option><option>Female</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Village</label>
+                  <input value={form.village} onChange={e => setForm(f => ({...f, village: e.target.value}))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">District</label>
+                  <input value={form.district} onChange={e => setForm(f => ({...f, district: e.target.value}))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Province</label>
+                  <select value={form.province} onChange={e => setForm(f => ({...f, province: e.target.value}))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none text-slate-700">
+                    <option value="">— Select —</option>
+                    <option>Eastern Highlands</option><option>Simbu</option><option>Western Highlands</option><option>Jiwaka</option><option>Enga</option><option>Morobe</option><option>Madang</option><option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Blood Type</label>
+                  <select value={form.bloodType} onChange={e => setForm(f => ({...f, bloodType: e.target.value}))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none text-slate-700">
+                    <option value="">Unknown</option>
+                    <option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Phone</label>
+                  <input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} placeholder="+675 ..." className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Guardian / Parent</label>
+                  <input value={form.guardian} onChange={e => setForm(f => ({...f, guardian: e.target.value}))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Allergies <span className="normal-case font-normal">(comma separated)</span></label>
+                  <input value={form.allergies} onChange={e => setForm(f => ({...f, allergies: e.target.value}))} placeholder="e.g. Penicillin, Sulfonamides" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Known Conditions <span className="normal-case font-normal">(comma separated)</span></label>
+                  <input value={form.conditions} onChange={e => setForm(f => ({...f, conditions: e.target.value}))} placeholder="e.g. Hypertension, Diabetes" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Current Medications <span className="normal-case font-normal">(comma separated)</span></label>
+                  <input value={form.medications} onChange={e => setForm(f => ({...f, medications: e.target.value}))} placeholder="e.g. Amlodipine 5mg OD, Metformin 500mg BD" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl text-sm transition">Create Patient Record</button>
+                <button type="button" onClick={() => setShowNewPatient(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ── Left panel: Patient list ──────────────────────────────────────────── */}
       <aside className="w-72 bg-white border-r border-slate-200 flex flex-col flex-shrink-0">
+        {/* Header + New Patient button */}
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+          <span className="text-sm font-semibold text-slate-700">Patients <span className="text-slate-400 font-normal">({patients.length})</span></span>
+          <button onClick={() => setShowNewPatient(true)} className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+            New Patient
+          </button>
+        </div>
         {/* Search */}
         <div className="p-3 border-b border-slate-100">
           <div className="relative">
