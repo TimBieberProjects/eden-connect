@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Terrain Park Skiing</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #060c1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  canvas { display: block; cursor: none; border-radius: 14px; box-shadow: 0 0 60px rgba(30,80,200,0.4); }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+C.width = 900; C.height = 500;
+const W = C.width, H = C.height;
+const GROUND = H - 70;
+const GRAVITY = 0.52;
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let speed = 5, frame = 0, score = 0, best = 0;
+let bgX = 0, treeX = 0;
+let obstacles = [], particles = [], popups = [];
+let nextSpawn = 350;
+let spaceDown = false, spaceFired = false;
+let mouseX = 220;
+
+const skier = {
+  x: 220, y: GROUND - 32,
+  vy: 0, w: 18, h: 32,
+  onGround: true,
+  grinding: false, grindRail: null,
+  airFrames: 0,
+  spinDeg: 0, spinSpeed: 0,
+  trail: [],
+};
+
+// Snowflakes
+const flakes = Array.from({length: 65}, () => ({
+  x: Math.random() * W, y: Math.random() * H,
+  r: Math.random() * 1.8 + 0.4,
+  vy: Math.random() * 1.2 + 0.4,
+  vx: -(Math.random() * 0.6 + 0.2),
+}));
+
+// ─── INPUT ────────────────────────────────────────────────────────────────────
+C.addEventListener('mousemove', e => {
+  const r = C.getBoundingClientRect();
+  mouseX = Math.max(80, Math.min(380, (e.clientX - r.left) * (W / r.width)));
+});
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); if (!spaceDown) spaceFired = true; spaceDown = true; }
+});
+window.addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = false; });
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function burst(x, y, n, color) {
+  for (let i = 0; i < n; i++) particles.push({
+    x, y, vx: (Math.random()-0.5)*5, vy: -Math.random()*4-1,
+    life: 25+Math.random()*20, maxLife: 45,
+    r: Math.random()*3+1, color,
+  });
+}
+function popup(x, y, txt, col) { popups.push({ x, y, txt, col, life: 70 }); }
+
+function spawnObstacle() {
+  const x = W + 90;
+  if (Math.random() < 0.5) {
+    const w = 80 + Math.random() * 85;
+    const h = 52 + Math.random() * 75;
+    obstacles.push({ type: 'ramp', x, w, h, launched: false });
+  } else {
+    const w = 110 + Math.random() * 120;
+    const y = GROUND - 58 - Math.random() * 38;
+    obstacles.push({ type: 'rail', x, w, y, h: 7 });
+  }
+}
+
+// ─── UPDATE ───────────────────────────────────────────────────────────────────
+function update() {
+  frame++;
+  speed = 5 + frame * 0.0009;
+  bgX = (bgX + speed * 0.22) % W;
+  treeX = (treeX + speed * 0.72) % W;
+
+  // Skier X follows mouse smoothly
+  skier.x += (mouseX - skier.x) * 0.1;
+
+  // Jump
+  if (spaceFired) {
+    spaceFired = false;
+    if (skier.onGround || skier.grinding) {
+      skier.vy = -13.5;
+      skier.onGround = false;
+      skier.grinding = false;
+      skier.grindRail = null;
+      skier.spinSpeed = 3.8;
+      burst(skier.x + skier.w/2, skier.y + skier.h, 10, '#ddeeff');
+    }
+  }
+
+  // Physics
+  if (!skier.onGround && !skier.grinding) {
+    skier.vy += GRAVITY;
+    skier.y += skier.vy;
+    skier.spinDeg += skier.spinSpeed;
+  }
+
+  // Grinding
+  if (skier.grinding && skier.grindRail) {
+    const rail = skier.grindRail;
+    skier.y = rail.y - skier.h;
+    skier.spinDeg = 0; skier.spinSpeed = 0;
+    score += 3;
+    if (frame % 14 === 0) popup(skier.x + skier.w/2, skier.y - 12, '+GRIND', '#a8dadc');
+    burst(skier.x + skier.w/2, skier.y + skier.h, 2, '#b8f0ff');
+  }
+
+  // Air time score
+  if (!skier.onGround && !skier.grinding) {
+    skier.airFrames++;
+    if (skier.airFrames % 22 === 0) { score += 5; popup(skier.x + skier.w/2, skier.y - 8, '+AIR', '#ffd166'); }
+  }
+
+  // Land on ground
+  if (!skier.grinding && skier.y + skier.h >= GROUND) {
+    skier.y = GROUND - skier.h;
+    if (!skier.onGround) {
+      burst(skier.x + skier.w/2, skier.y + skier.h, 16, '#ddeeff');
+      if (skier.airFrames > 22) popup(skier.x + skier.w/2, skier.y - 12, 'STOMP!', '#06d6a0');
+    }
+    skier.vy = 0; skier.onGround = true;
+    skier.airFrames = 0; skier.spinSpeed = 0; skier.spinDeg = 0;
+  }
+
+  // Trail
+  skier.trail.push({ x: skier.x + skier.w/2, y: skier.y + skier.h });
+  if (skier.trail.length > 20) skier.trail.shift();
+
+  // Spawn
+  nextSpawn -= speed;
+  if (nextSpawn <= 0) { spawnObstacle(); nextSpawn = 260 + Math.random() * 210; }
+
+  // Obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.x -= speed;
+
+    const cx = skier.x + skier.w / 2;
+
+    if (o.type === 'ramp') {
+      if (cx > o.x && cx < o.x + o.w) {
+        const relX = cx - o.x;
+        const surfY = GROUND - (relX / o.w) * o.h;
+        if (!skier.grinding && skier.y + skier.h >= surfY - 2 && skier.y + skier.h <= surfY + 20) {
+          skier.y = surfY - skier.h;
+          skier.vy = 0; skier.onGround = true; skier.airFrames = 0;
+          if (relX >= o.w * 0.82 && !o.launched) {
+            o.launched = true;
+            skier.vy = -(11 + o.h * 0.18);
+            skier.onGround = false;
+            skier.spinSpeed = 4.2;
+            score += 10;
+            burst(cx, skier.y + skier.h, 20, '#ffffff');
+            popup(cx, skier.y - 18, 'BIG AIR!  +10', '#ffd166');
+          }
+        }
+      }
+
+    } else if (o.type === 'rail') {
+      const onX = cx > o.x && cx < o.x + o.w;
+      if (skier.grinding && skier.grindRail === o) {
+        if (!onX) {
+          skier.grinding = false; skier.grindRail = null;
+          skier.vy = -4;
+          burst(cx, skier.y + skier.h, 10, '#a8dadc');
+        }
+      } else if (onX && !skier.onGround && !skier.grinding && skier.vy >= -1) {
+        const bot = skier.y + skier.h;
+        if (bot >= o.y - 2 && bot <= o.y + 20) {
+          skier.grinding = true; skier.grindRail = o;
+          skier.vy = 0; skier.y = o.y - skier.h;
+          score += 15;
+          burst(cx, o.y, 16, '#a8dadc');
+          popup(cx, skier.y - 18, 'GRIND!  +15', '#a8dadc');
+        }
+      }
+    }
+
+    if (o.x + o.w < -80) obstacles.splice(i, 1);
+  }
+
+  // Particles & popups
+  for (let i = particles.length-1; i >= 0; i--) {
+    const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.13; p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  for (let i = popups.length-1; i >= 0; i--) {
+    popups[i].y -= 1.1; popups[i].life--;
+    if (popups[i].life <= 0) popups.splice(i, 1);
+  }
+
+  // Snowflakes
+  for (const f of flakes) {
+    f.x += f.vx; f.y += f.vy;
+    if (f.y > H) { f.y = -4; f.x = Math.random() * W; }
+    if (f.x < -4) f.x = W + 4;
+  }
+
+  score += 0.04;
+  if (score > best) best = score;
+}
+
+// ─── DRAW ─────────────────────────────────────────────────────────────────────
+function drawBG() {
+  // Sky
+  const sk = ctx.createLinearGradient(0, 0, 0, GROUND);
+  sk.addColorStop(0, '#07122a');
+  sk.addColorStop(0.55, '#0c2a5e');
+  sk.addColorStop(1, '#1848a0');
+  ctx.fillStyle = sk; ctx.fillRect(0, 0, W, GROUND);
+
+  // Stars
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  [[55,25],[140,70],[215,18],[360,55],[510,12],[660,42],[760,22],[830,68],[95,105],[410,88],[610,98],[875,45],[310,38],[710,75],[170,45],[470,30],[580,65]].forEach(([sx,sy]) => {
+    ctx.beginPath(); ctx.arc(sx, sy, 1, 0, Math.PI*2); ctx.fill();
+  });
+
+  // Far mountains
+  for (let i = 0; i < 6; i++) {
+    const mx = ((i*220 - bgX*0.35) % (W+220) + W+220) % (W+220) - 110;
+    ctx.fillStyle = '#0a1d45';
+    ctx.beginPath(); ctx.moveTo(mx-90,GROUND); ctx.lineTo(mx+75,GROUND-195); ctx.lineTo(mx+210,GROUND); ctx.fill();
+    // snow cap
+    ctx.fillStyle = 'rgba(180,220,255,0.14)';
+    ctx.beginPath(); ctx.moveTo(mx+45,GROUND-168); ctx.lineTo(mx+75,GROUND-195); ctx.lineTo(mx+105,GROUND-168); ctx.fill();
+  }
+
+  // Trees
+  for (let i = 0; i < 10; i++) {
+    const tx = ((i*115 - treeX) % (W+70) + W+70) % (W+70) - 35;
+    const th = 44 + (i%3)*17;
+    ctx.fillStyle = '#071a0d';
+    ctx.beginPath(); ctx.moveTo(tx-15,GROUND); ctx.lineTo(tx,GROUND-th); ctx.lineTo(tx+15,GROUND); ctx.fill();
+    ctx.fillStyle = 'rgba(200,235,255,0.12)';
+    ctx.beginPath(); ctx.moveTo(tx-6,GROUND-th+12); ctx.lineTo(tx,GROUND-th); ctx.lineTo(tx+6,GROUND-th+12); ctx.fill();
+  }
+
+  // Ground snow
+  const gg = ctx.createLinearGradient(0, GROUND, 0, H);
+  gg.addColorStop(0, '#d2eaff'); gg.addColorStop(1, '#98bbdc');
+  ctx.fillStyle = gg; ctx.fillRect(0, GROUND, W, H-GROUND);
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0,GROUND); ctx.lineTo(W,GROUND); ctx.stroke();
+}
+
+function drawObstacles() {
+  for (const o of obstacles) {
+    if (o.type === 'ramp') {
+      // shadow
+      ctx.fillStyle = 'rgba(0,20,70,0.18)';
+      ctx.beginPath(); ctx.moveTo(o.x+7,GROUND+7); ctx.lineTo(o.x+o.w+7,GROUND-o.h+7); ctx.lineTo(o.x+o.w+7,GROUND+7); ctx.closePath(); ctx.fill();
+      // body
+      const rg = ctx.createLinearGradient(o.x,GROUND,o.x+o.w,GROUND-o.h);
+      rg.addColorStop(0,'#b5d5f5'); rg.addColorStop(1,'#ffffff');
+      ctx.fillStyle = rg;
+      ctx.beginPath(); ctx.moveTo(o.x,GROUND); ctx.lineTo(o.x+o.w,GROUND-o.h); ctx.lineTo(o.x+o.w,GROUND); ctx.closePath(); ctx.fill();
+      // edge
+      ctx.strokeStyle = 'rgba(160,210,255,0.9)'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(o.x,GROUND); ctx.lineTo(o.x+o.w,GROUND-o.h); ctx.stroke();
+      // label
+      ctx.fillStyle = 'rgba(20,80,180,0.55)'; ctx.font = 'bold 10px Segoe UI'; ctx.textAlign = 'center';
+      ctx.fillText('JUMP', o.x+o.w*0.68, GROUND-o.h*0.32); ctx.textAlign = 'left';
+
+    } else if (o.type === 'rail') {
+      // posts
+      ctx.strokeStyle = 'rgba(130,145,165,0.55)'; ctx.lineWidth = 2;
+      for (let j = 0; j <= 3; j++) {
+        const px = o.x + (j/3)*o.w;
+        ctx.beginPath(); ctx.moveTo(px,o.y+o.h); ctx.lineTo(px,GROUND); ctx.stroke();
+      }
+      // bar
+      const rg = ctx.createLinearGradient(0,o.y,0,o.y+o.h);
+      rg.addColorStop(0,'#dde8f4'); rg.addColorStop(0.3,'#ffffff'); rg.addColorStop(1,'#8fa8c0');
+      ctx.fillStyle = rg;
+      ctx.beginPath(); ctx.roundRect(o.x,o.y,o.w,o.h,3); ctx.fill();
+      // shine
+      ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.fillRect(o.x+2,o.y+1,o.w-4,2);
+      // label
+      ctx.fillStyle = 'rgba(20,80,180,0.5)'; ctx.font = 'bold 10px Segoe UI'; ctx.textAlign = 'center';
+      ctx.fillText('RAIL', o.x+o.w/2, o.y-6); ctx.textAlign = 'left';
+    }
+  }
+}
+
+function drawTrail() {
+  for (let i = 1; i < skier.trail.length; i++) {
+    const a = i / skier.trail.length;
+    ctx.strokeStyle = `rgba(180,220,255,${a*0.3})`;
+    ctx.lineWidth = a * 2.5;
+    ctx.beginPath();
+    ctx.moveTo(skier.trail[i-1].x, skier.trail[i-1].y);
+    ctx.lineTo(skier.trail[i].x, skier.trail[i].y);
+    ctx.stroke();
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawSkier() {
+  const cx = skier.x + skier.w/2, cy = skier.y + skier.h/2;
+  // ground shadow
+  if (!skier.onGround) {
+    const dist = GROUND - (skier.y + skier.h);
+    const a = Math.max(0, 1 - dist/180) * 0.32;
+    ctx.fillStyle = `rgba(0,20,80,${a})`;
+    ctx.beginPath(); ctx.ellipse(cx, GROUND+3, 13, 5, 0, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((skier.onGround ? 0 : skier.spinDeg) * Math.PI/180);
+  const hw = skier.w/2, hh = skier.h/2;
+
+  // Skis
+  ctx.fillStyle = '#cc1133';
+  ctx.beginPath(); ctx.roundRect(-hw-5,hh-4,skier.w+12,4,2); ctx.fill();
+
+  // Boots
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(-hw+1,hh-10,6,8); ctx.fillRect(hw-7,hh-10,6,8);
+
+  // Legs / pants
+  ctx.fillStyle = '#1a3a8f';
+  ctx.fillRect(-hw+2,hh-18,skier.w-4,9);
+
+  // Jacket
+  ctx.fillStyle = '#e94560';
+  ctx.fillRect(-hw+3,-hh+10,skier.w-6,16);
+
+  // Scarf
+  ctx.fillStyle = '#06d6a0';
+  ctx.fillRect(-hw+3,-hh+15,skier.w-6,4);
+
+  // Arms / poles
+  ctx.strokeStyle = '#99aacc'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-hw,  -hh+13); ctx.lineTo(-hw-9, hh-7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo( hw,  -hh+13); ctx.lineTo( hw+9, hh-7); ctx.stroke();
+  ctx.fillStyle = '#778899';
+  ctx.beginPath(); ctx.arc(-hw-9,hh-7,2.5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( hw+9,hh-7,2.5,0,Math.PI*2); ctx.fill();
+
+  // Helmet
+  ctx.fillStyle = '#ffd166';
+  ctx.beginPath(); ctx.arc(0,-hh+6,8,0,Math.PI*2); ctx.fill();
+
+  // Goggles
+  ctx.fillStyle = '#111122';
+  ctx.beginPath(); ctx.roundRect(-7,-hh+3,14,5,2); ctx.fill();
+  ctx.fillStyle = 'rgba(80,160,255,0.35)';
+  ctx.beginPath(); ctx.roundRect(-6,-hh+3.5,12,3.5,1.5); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSnow() {
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
+  for (const f of flakes) { ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill(); }
+}
+
+function drawHUD() {
+  // Score
+  ctx.fillStyle = 'rgba(8,18,45,0.65)';
+  ctx.beginPath(); ctx.roundRect(12,12,148,54,8); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '11px Segoe UI'; ctx.fillText('SCORE', 24, 29);
+  ctx.fillStyle = '#ffd166'; ctx.font = 'bold 26px Segoe UI'; ctx.fillText(Math.floor(score).toLocaleString(), 24, 55);
+
+  // Best
+  ctx.fillStyle = 'rgba(8,18,45,0.65)';
+  ctx.beginPath(); ctx.roundRect(168,12,148,54,8); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '11px Segoe UI'; ctx.fillText('BEST', 180, 29);
+  ctx.fillStyle = '#a8dadc'; ctx.font = 'bold 26px Segoe UI'; ctx.fillText(Math.floor(best).toLocaleString(), 180, 55);
+
+  // Speed
+  ctx.fillStyle = 'rgba(8,18,45,0.65)';
+  ctx.beginPath(); ctx.roundRect(W-106,12,94,54,8); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '11px Segoe UI'; ctx.fillText('SPEED', W-94, 29);
+  ctx.fillStyle = '#e94560'; ctx.font = 'bold 22px Segoe UI'; ctx.fillText(speed.toFixed(1)+'x', W-94, 54);
+
+  // Grind banner
+  if (skier.grinding) {
+    ctx.fillStyle = 'rgba(168,218,220,0.9)';
+    ctx.font = 'bold 15px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText('⚡  GRINDING  ⚡', W/2, 32); ctx.textAlign = 'left';
+  }
+
+  // Popups
+  ctx.textAlign = 'center';
+  for (const p of popups) {
+    ctx.globalAlpha = Math.min(1, p.life/22);
+    ctx.font = 'bold 17px Segoe UI'; ctx.fillStyle = p.col;
+    ctx.fillText(p.txt, p.x, p.y);
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
+
+  // Controls hint (fades out)
+  if (frame < 300) {
+    const a = Math.min(1, (300-frame)/55);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(8,18,45,0.6)';
+    ctx.beginPath(); ctx.roundRect(W/2-155,H-46,310,32,7); ctx.fill();
+    ctx.fillStyle = '#ccc'; ctx.font = '13px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText('MOUSE  to steer    ·    SPACE  to jump', W/2, H-24);
+    ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+  }
+}
+
+// ─── LOOP ─────────────────────────────────────────────────────────────────────
+function loop() {
+  update();
+  ctx.clearRect(0, 0, W, H);
+  drawBG();
+  drawObstacles();
+  drawTrail();
+  drawParticles();
+  drawSkier();
+  drawSnow();
+  drawHUD();
+  requestAnimationFrame(loop);
+}
+
+skier.y = GROUND - skier.h;
+loop();
+</script>
+</body>
+</html>
