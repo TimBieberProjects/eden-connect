@@ -292,6 +292,85 @@ export default function MapPage() {
               {cfg.label}
             </div>
 
+            {/* Achievement Badges */}
+            {(() => {
+              const stageIndex = { kicked_off: 0, in_progress: 1, achieved: 2 }[selected.che_stage];
+              const badges = [
+                {
+                  label: 'Program Joined',
+                  sublabel: 'Stage 1',
+                  earned: stageIndex >= 0,
+                  color: '#6366f1',
+                  glow: 'rgba(99,102,241,0.4)',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                      <path d="M4 4h8l-1 5h5l-8 11 1-7H4L4 4z" />
+                    </svg>
+                  ),
+                },
+                {
+                  label: 'Health Journey',
+                  sublabel: 'Stage 2',
+                  earned: stageIndex >= 1,
+                  color: '#f97316',
+                  glow: 'rgba(249,115,22,0.4)',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                      <path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 4.5c.83 0 1.5.67 1.5 1.5v5a1.5 1.5 0 01-3 0V11c0-.83.67-1.5 1.5-1.5z" />
+                    </svg>
+                  ),
+                },
+                {
+                  label: 'Health Village',
+                  sublabel: 'Achieved',
+                  earned: stageIndex >= 2,
+                  color: '#22c55e',
+                  glow: 'rgba(34,197,94,0.5)',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                      <path d="M12 2l2.9 6.26L22 9.27l-5 5.14 1.18 7.09L12 18.25l-6.18 3.25L7 14.41 2 9.27l7.1-1.01L12 2z" />
+                    </svg>
+                  ),
+                },
+              ];
+              return (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Achievements</p>
+                  <div className="flex gap-3 justify-between">
+                    {badges.map((badge, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1.5 flex-1">
+                        <div
+                          className="relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300"
+                          style={badge.earned ? {
+                            background: `radial-gradient(circle at 35% 35%, white 0%, ${badge.color} 60%)`,
+                            boxShadow: `0 0 0 3px white, 0 0 0 5px ${badge.color}, 0 4px 16px ${badge.glow}`,
+                            color: 'white',
+                          } : {
+                            background: '#f1f5f9',
+                            boxShadow: '0 0 0 3px white, 0 0 0 5px #e2e8f0',
+                            color: '#cbd5e1',
+                          }}
+                        >
+                          {badge.icon}
+                          {badge.earned && (
+                            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow">
+                              <svg viewBox="0 0 24 24" fill="none" stroke={badge.color} strokeWidth={3} className="w-3 h-3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-xs font-semibold leading-tight ${badge.earned ? 'text-slate-700' : 'text-slate-400'}`}>{badge.label}</div>
+                          <div className={`text-[10px] mt-0.5 ${badge.earned ? 'text-slate-400' : 'text-slate-300'}`}>{badge.sublabel}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Key stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
