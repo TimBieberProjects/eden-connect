@@ -6,10 +6,12 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -24,6 +26,20 @@ export default function LoginPage() {
     } else {
       router.push('/dashboard');
       router.refresh();
+    }
+  }
+
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      setSignupSuccess(true);
+      setLoading(false);
     }
   }
 
@@ -83,8 +99,14 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-sm">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-slate-900">Sign in</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{mode === 'signin' ? 'Sign in' : 'Create account'}</h1>
             <p className="text-slate-500 text-sm mt-1">Access the EDEN Connect dashboard</p>
+          </div>
+
+          {/* Mode toggle */}
+          <div className="flex rounded-lg border border-slate-200 overflow-hidden mb-6 text-sm font-medium">
+            <button onClick={() => { setMode('signin'); setError(''); setSignupSuccess(false); }} className={`flex-1 py-2 transition ${mode === 'signin' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Sign in</button>
+            <button onClick={() => { setMode('signup'); setError(''); setSignupSuccess(false); }} className={`flex-1 py-2 transition ${mode === 'signup' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Sign up</button>
           </div>
 
           {/* Google */}
@@ -110,7 +132,13 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          {signupSuccess && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm mb-4">
+              Account created! Check your email to confirm, then sign in.
+            </div>
+          )}
+
+          <form onSubmit={mode === 'signin' ? handleLogin : handleSignUp} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
               <input
@@ -145,7 +173,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2.5 rounded-lg transition text-sm shadow-sm"
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? (mode === 'signin' ? 'Signing in…' : 'Creating account…') : (mode === 'signin' ? 'Sign in' : 'Create account')}
             </button>
           </form>
 
