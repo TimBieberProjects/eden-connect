@@ -417,11 +417,27 @@ export default function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>(PATIENTS);
 
   useEffect(() => {
-    const newPats: Patient[] = JSON.parse(localStorage.getItem('eden_new_patients') || '[]');
+    function migrateVisit(v: any): Visit {
+      return {
+        date: v.date ?? '—',
+        provider: v.provider ?? '—',
+        facility: v.facility ?? '—',
+        triage: v.triage ?? 'GREEN',
+        chiefComplaint: v.chiefComplaint ?? v.chief_complaint ?? '',
+        subjective: v.subjective ?? v.soap?.s ?? '',
+        objective: v.objective ?? v.soap?.o ?? '',
+        assessment: v.assessment ?? v.soap?.a ?? '',
+        plan: v.plan ?? v.soap?.p ?? '',
+        medications: v.medications ?? [],
+        vitals: v.vitals ?? { temp: '—', hr: '—', rr: '—', bp: '—', spo2: '—', weight: '—' },
+      };
+    }
+    const rawPats: any[] = JSON.parse(localStorage.getItem('eden_new_patients') || '[]');
+    const newPats: Patient[] = rawPats.map(p => ({ ...p, visits: (p.visits ?? []).map(migrateVisit) }));
     const newVisits: Record<string, any[]> = JSON.parse(localStorage.getItem('eden_new_visits') || '{}');
     const merged = PATIENTS.map(p => ({
       ...p,
-      visits: [...(newVisits[p.id] || []), ...p.visits],
+      visits: [...(newVisits[p.id] ?? []).map(migrateVisit), ...p.visits],
     }));
     setPatients([...newPats, ...merged]);
   }, []);
