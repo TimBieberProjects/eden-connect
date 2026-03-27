@@ -113,6 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     pathname.startsWith('/dashboard/baseline') ? 'Baseline Reports' :
     pathname.startsWith('/dashboard/quarterly') ? 'Quarterly Reports' :
     pathname.startsWith('/dashboard/ai-query') ? 'AI Reports' :
+    pathname.startsWith('/dashboard/telehealth') ? 'Telehealth' :
     pathname.startsWith('/dashboard/clinical') ? 'Clinical Copilot' :
     pathname.startsWith('/dashboard/patients') ? 'Patient Records' :
     'Dashboard';
@@ -244,6 +245,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           ), true)}
+
+          {/* Telehealth */}
+          {navItem('/dashboard/telehealth', 'Telehealth', (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          ))}
 
           {/* Patient Records */}
           {navItem('/dashboard/patients', 'Patient Records', (
