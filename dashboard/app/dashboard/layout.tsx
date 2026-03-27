@@ -11,7 +11,39 @@ const LockIcon = () => (
   </svg>
 );
 
+const ChevronIcon = ({ open }: { open: boolean }) => (
+  <svg
+    className={`w-3.5 h-3.5 flex-shrink-0 text-slate-300 transition-transform ${open ? 'rotate-180' : ''}`}
+    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
 const SURVEYS_ITEMS = [
+  {
+    href: '/dashboard/baseline-survey',
+    label: 'Baseline Survey',
+    locked: false,
+    icon: (
+      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
+    href: '/dashboard/quarterly-survey',
+    label: 'Quarterly Survey',
+    locked: false,
+    icon: (
+      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+];
+
+const REPORTS_ITEMS = [
   {
     href: '/dashboard/overview',
     label: 'Health Overview',
@@ -24,7 +56,7 @@ const SURVEYS_ITEMS = [
   },
   {
     href: '/dashboard/baseline',
-    label: 'Baseline Surveys',
+    label: 'Baseline Reports',
     locked: true,
     icon: (
       <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,7 +76,7 @@ const SURVEYS_ITEMS = [
   },
   {
     href: '/dashboard/ai-query',
-    label: 'AI Health Query',
+    label: 'AI Reports',
     locked: true,
     icon: (
       <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,6 +95,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const surveysActive = surveysHrefs.some(h => pathname === h || pathname.startsWith(h));
   const [surveysOpen, setSurveysOpen] = useState(surveysActive);
 
+  const reportsHrefs = REPORTS_ITEMS.map(i => i.href);
+  const reportsActive = reportsHrefs.some(h => pathname === h || pathname.startsWith(h));
+  const [reportsOpen, setReportsOpen] = useState(reportsActive);
+
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.push('/login');
@@ -71,10 +107,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const pageLabel =
     pathname === '/dashboard/map' ? 'Community Map' :
+    pathname.startsWith('/dashboard/baseline-survey') ? 'Baseline Survey' :
+    pathname.startsWith('/dashboard/quarterly-survey') ? 'Quarterly Survey' :
     pathname.startsWith('/dashboard/overview') ? 'Health Overview' :
-    pathname.startsWith('/dashboard/baseline') ? 'Baseline Surveys' :
+    pathname.startsWith('/dashboard/baseline') ? 'Baseline Reports' :
     pathname.startsWith('/dashboard/quarterly') ? 'Quarterly Reports' :
-    pathname.startsWith('/dashboard/ai-query') ? 'AI Health Query' :
+    pathname.startsWith('/dashboard/ai-query') ? 'AI Reports' :
     pathname.startsWith('/dashboard/clinical') ? 'Clinical Copilot' :
     pathname.startsWith('/dashboard/patients') ? 'Patient Records' :
     'Dashboard';
@@ -97,6 +135,53 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </Link>
     );
   };
+
+  const collapsibleSection = (
+    label: string,
+    icon: React.ReactNode,
+    isActive: boolean,
+    isOpen: boolean,
+    toggle: () => void,
+    items: typeof SURVEYS_ITEMS
+  ) => (
+    <>
+      <button
+        onClick={toggle}
+        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+          isActive
+            ? 'text-white bg-slate-700'
+            : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+        }`}
+      >
+        <span className={isActive ? 'text-indigo-400' : 'text-slate-400'}>{icon}</span>
+        <span className="flex-1 text-left">{label}</span>
+        <ChevronIcon open={isOpen} />
+      </button>
+
+      {isOpen && (
+        <div className="ml-3 pl-3 border-l border-slate-600 space-y-0.5">
+          {items.map(({ href, label: itemLabel, icon: itemIcon, locked }) => {
+            const active = pathname === href || pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  active
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                <span className={active ? 'text-white' : 'text-slate-400'}>{itemIcon}</span>
+                <span className="flex-1">{itemLabel}</span>
+                {locked && !active && <LockIcon />}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -129,50 +214,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </svg>
           ))}
 
-          {/* Surveys & Reports — collapsible */}
-          <button
-            onClick={() => setSurveysOpen(o => !o)}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-              surveysActive
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-            }`}
-          >
-            <span className={surveysActive ? 'text-white' : 'text-slate-400'}>
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </span>
-            <span className="flex-1 text-left">Surveys & Reports</span>
-            <svg
-              className={`w-3.5 h-3.5 flex-shrink-0 text-slate-300 transition-transform ${surveysOpen ? 'rotate-180' : ''}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+          {/* Surveys — collapsible, not locked */}
+          {collapsibleSection(
+            'Surveys',
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>,
+            surveysActive,
+            surveysOpen,
+            () => setSurveysOpen(o => !o),
+            SURVEYS_ITEMS
+          )}
 
-          {surveysOpen && (
-            <div className="ml-3 pl-3 border-l border-slate-600 space-y-0.5">
-              {SURVEYS_ITEMS.map(({ href, label, icon, locked }) => {
-                const active = pathname === href || pathname.startsWith(href);
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      active
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                    }`}
-                  >
-                    <span className={active ? 'text-white' : 'text-slate-400'}>{icon}</span>
-                    <span className="flex-1">{label}</span>
-                    {locked && !active && <LockIcon />}
-                  </Link>
-                );
-              })}
-            </div>
+          {/* Reports — collapsible, locked */}
+          {collapsibleSection(
+            'Reports',
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>,
+            reportsActive,
+            reportsOpen,
+            () => setReportsOpen(o => !o),
+            REPORTS_ITEMS
           )}
 
           {/* Clinical Copilot */}
