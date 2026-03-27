@@ -599,7 +599,7 @@ export default function PatientsPage() {
       )}
 
       {/* ── Left panel: Patient list ──────────────────────────────────────────── */}
-      <aside className="w-72 border-r border-slate-300 flex flex-col flex-shrink-0" style={{ background: '#dde3ec' }}>
+      <aside className="w-72 border-r border-slate-400 flex flex-col flex-shrink-0" style={{ background: '#b8c4d4' }}>
         {/* Header + New Patient button */}
         <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
           <span className="text-sm font-semibold text-slate-700">Patients <span className="text-slate-400 font-normal">({patients.length})</span></span>
@@ -648,7 +648,7 @@ export default function PatientsPage() {
                 className={`w-full text-left p-3 rounded-lg border transition-all ${
                   isActive
                     ? 'bg-white border-indigo-300 shadow-sm'
-                    : 'bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-start gap-3">
