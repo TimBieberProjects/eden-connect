@@ -117,15 +117,16 @@ export default function ClinicalPage() {
   function buildVisit() {
     const today = new Date().toISOString().split('T')[0];
     return {
-      id: Date.now().toString(),
       date: today,
       provider: 'Clinical Copilot AI',
       facility: selectedFacility ? (FACILITIES.find(f => f.key === selectedFacility)?.name ?? 'Field Assessment') : 'Field Assessment',
-      chief_complaint: patientName ? `Assessment for ${patientName}` : input.split('\n')[0].substring(0, 80),
-      soap: { s: input, o: '', a: '', p: response },
-      vitals: { date: today, temp: '—', hr: '—', rr: '—', bp: '—', spo2: '—', weight: '—' },
+      chiefComplaint: patientName ? `Assessment for ${patientName}` : input.split('\n')[0].substring(0, 80),
+      subjective: input,
+      objective: '',
+      assessment: '',
+      plan: response,
+      vitals: { temp: '—', hr: '—', rr: '—', bp: '—', spo2: '—', weight: '—' },
       triage: (response.includes('PINK') ? 'PINK' : response.includes('YELLOW') ? 'YELLOW' : 'GREEN') as 'PINK' | 'YELLOW' | 'GREEN',
-      referral: response.toLowerCase().includes('refer'),
       medications: [],
     };
   }
