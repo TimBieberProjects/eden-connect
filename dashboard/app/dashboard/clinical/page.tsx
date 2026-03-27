@@ -111,6 +111,8 @@ export default function ClinicalPage() {
   const [saveLastName, setSaveLastName] = useState('');
   const [saveSearch, setSaveSearch] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [allPatients, setAllPatients] = useState<{ id: string; name: string; age: string; village: string }[]>([]);
+  const [selectedExistingId, setSelectedExistingId] = useState<string | null>(null);
 
   function buildVisit() {
     const today = new Date().toISOString().split('T')[0];
@@ -148,12 +150,14 @@ export default function ClinicalPage() {
       const existing = JSON.parse(localStorage.getItem('eden_new_patients') || '[]');
       localStorage.setItem('eden_new_patients', JSON.stringify([newPatient, ...existing]));
     } else {
-      // Add visit to existing patient by name match
+      // Add visit to existing patient by ID
       const existingVisits = JSON.parse(localStorage.getItem('eden_new_visits') || '{}');
-      const matchId = saveSearch.trim();
-      if (!existingVisits[matchId]) existingVisits[matchId] = [];
-      existingVisits[matchId].unshift(visit);
-      localStorage.setItem('eden_new_visits', JSON.stringify(existingVisits));
+      const matchId = selectedExistingId;
+      if (matchId) {
+        if (!existingVisits[matchId]) existingVisits[matchId] = [];
+        existingVisits[matchId].unshift(visit);
+        localStorage.setItem('eden_new_visits', JSON.stringify(existingVisits));
+      }
     }
     setSaveSuccess(true);
     setTimeout(() => { setShowSaveModal(false); setSaveSuccess(false); setSaveFirstName(''); setSaveLastName(''); setSaveSearch(''); }, 1800);
@@ -168,6 +172,23 @@ export default function ClinicalPage() {
       responseRef.current.scrollTop = responseRef.current.scrollHeight;
     }
   }, [response]);
+
+  useEffect(() => {
+    if (showSaveModal) {
+      const STATIC_PATIENTS = [
+        { id: '1', name: 'Maria Yagusa', age: '34', village: 'Yagusa village' },
+        { id: '2', name: 'James Kaiulo', age: '8', village: 'Kaiulo village' },
+        { id: '3', name: 'Ruth Mondo', age: '27', village: 'Goroka Town' },
+      ];
+      const newPats: { id: string; name: string; age: string; village: string }[] =
+        JSON.parse(localStorage.getItem('eden_new_patients') || '[]').map((p: any) => ({
+          id: p.id, name: p.name, age: p.age || '—', village: p.village || '—',
+        }));
+      setAllPatients([...newPats, ...STATIC_PATIENTS]);
+      setSelectedExistingId(null);
+      setSaveSearch('');
+    }
+  }, [showSaveModal]);
 
   function startListening() {
     const SpeechRecognition =
@@ -546,15 +567,40 @@ export default function ClinicalPage() {
                       </div>
                     ) : (
                       <div>
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Patient ID or Name</label>
-                        <input value={saveSearch} onChange={e => setSaveSearch(e.target.value)} placeholder="Enter patient ID to add visit to their record" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
-                        <p className="text-xs text-slate-400 mt-1">The visit and SOAP notes will be added under this patient's record</p>
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Search Patient</label>
+                        <input
+                          value={saveSearch}
+                          onChange={e => { setSaveSearch(e.target.value); setSelectedExistingId(null); }}
+                          placeholder="Type name to search…"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+                        />
+                        {saveSearch && !selectedExistingId && (
+                          <div className="mt-1 border border-slate-200 rounded-lg overflow-hidden max-h-40 overflow-y-auto">
+                            {allPatients.filter(p => p.name.toLowerCase().includes(saveSearch.toLowerCase())).length === 0 ? (
+                              <p className="px-3 py-2 text-sm text-slate-400">No patients found</p>
+                            ) : (
+                              allPatients.filter(p => p.name.toLowerCase().includes(saveSearch.toLowerCase())).map(p => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => { setSelectedExistingId(p.id); setSaveSearch(p.name); }}
+                                  className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 border-b border-slate-100 last:border-0"
+                                >
+                                  <span className="font-medium text-slate-800">{p.name}</span>
+                                  <span className="text-slate-400 ml-2 text-xs">{p.age} · {p.village}</span>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                        {selectedExistingId && (
+                          <p className="text-xs text-green-600 mt-1 font-medium">✓ Selected — visit will be added to {saveSearch}&apos;s record</p>
+                        )}
                       </div>
                     )}
                     <div className="bg-indigo-50 rounded-lg p-3 text-xs text-indigo-700 border border-indigo-100">
                       <span className="font-semibold">Will save:</span> Today's visit with chief complaint, full SOAP notes from the clinical input, and the AI treatment plan.
                     </div>
-                    <button onClick={handleSaveRecord} disabled={saveMode === 'new' && !saveFirstName && !patientName} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-semibold py-2.5 rounded-xl text-sm transition">
+                    <button onClick={handleSaveRecord} disabled={(saveMode === 'new' && !saveFirstName && !patientName) || (saveMode === 'existing' && !selectedExistingId)} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-semibold py-2.5 rounded-xl text-sm transition">
                       Save to Patient Records
                     </button>
                   </>
