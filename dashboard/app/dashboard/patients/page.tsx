@@ -599,9 +599,9 @@ export default function PatientsPage() {
       )}
 
       {/* ── Left panel: Patient list ──────────────────────────────────────────── */}
-      <aside className="w-72 bg-white border-r border-slate-200 flex flex-col flex-shrink-0">
+      <aside className="w-72 bg-slate-100 border-r border-slate-300 flex flex-col flex-shrink-0">
         {/* Header + New Patient button */}
-        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
           <span className="text-sm font-semibold text-slate-700">Patients <span className="text-slate-400 font-normal">({patients.length})</span></span>
           <button onClick={() => setShowNewPatient(true)} className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
@@ -609,7 +609,7 @@ export default function PatientsPage() {
           </button>
         </div>
         {/* Search */}
-        <div className="p-3 border-b border-slate-100">
+        <div className="p-3 border-b border-slate-200">
           <div className="relative">
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
@@ -629,7 +629,7 @@ export default function PatientsPage() {
               placeholder="Search patients..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none bg-slate-50"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none bg-white"
             />
           </div>
         </div>
@@ -672,7 +672,7 @@ export default function PatientsPage() {
           })}
         </div>
 
-        <div className="p-3 border-t border-slate-100">
+        <div className="p-3 border-t border-slate-200">
           <p className="text-xs text-slate-400 text-center">{PATIENTS.length} patients · Demo data</p>
         </div>
       </aside>
