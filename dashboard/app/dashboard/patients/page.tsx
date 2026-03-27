@@ -647,8 +647,8 @@ export default function PatientsPage() {
                 onClick={() => handleSelectPatient(p.id)}
                 className={`w-full text-left p-3 rounded-lg border transition-all ${
                   isActive
-                    ? 'bg-indigo-50 border-indigo-300 shadow-sm'
-                    : 'bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200'
+                    ? 'bg-white border-indigo-300 shadow-sm'
+                    : 'bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-start gap-3">
