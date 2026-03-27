@@ -113,6 +113,29 @@ export default function ClinicalPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [allPatients, setAllPatients] = useState<{ id: string; name: string; age: string; village: string }[]>([]);
   const [selectedExistingId, setSelectedExistingId] = useState<string | null>(null);
+  const [summaryCopied, setSummaryCopied] = useState(false);
+
+  function buildTelehealthSummary() {
+    const facility = selectedFacility ? FACILITIES.find(f => f.key === selectedFacility)?.name : null;
+    return [
+      '🏥 EDEN Connect — Patient Referral Summary',
+      '─────────────────────────────────────',
+      patientName ? `Patient: ${patientName}${patientAge ? `, ${patientAge}` : ''}${patientSex ? ` · ${patientSex}` : ''}` : null,
+      facility ? `Facility: ${facility}` : null,
+      input ? `\nPresenting Complaint:\n${input}` : null,
+      response ? `\nAI Clinical Assessment:\n${response}` : null,
+      '\n─────────────────────────────────────',
+      'Sent via EDEN Connect Clinical Copilot',
+    ].filter(Boolean).join('\n');
+  }
+
+  function handleCopySummary() {
+    const summary = buildTelehealthSummary();
+    navigator.clipboard.writeText(summary);
+    localStorage.setItem('eden_telehealth_summary', summary);
+    setSummaryCopied(true);
+    setTimeout(() => setSummaryCopied(false), 2500);
+  }
 
   function buildVisit() {
     const today = new Date().toISOString().split('T')[0];
@@ -704,11 +727,24 @@ export default function ClinicalPage() {
               {/* Patient summary */}
               {(patientName || response) ? (
                 <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 space-y-1.5">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Patient Summary — share with clinician</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Patient Summary</p>
+                    <button
+                      onClick={handleCopySummary}
+                      className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${summaryCopied ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}
+                    >
+                      {summaryCopied ? (
+                        <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Copied!</>
+                      ) : (
+                        <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy for Meet chat</>
+                      )}
+                    </button>
+                  </div>
                   {patientName && <p className="text-sm text-slate-800"><span className="font-medium">Patient:</span> {patientName}{patientAge ? `, ${patientAge}` : ''}{patientSex ? ` · ${patientSex}` : ''}</p>}
-                  {input && <p className="text-sm text-slate-700"><span className="font-medium">Presenting complaint:</span> {input.split('\n')[0].substring(0, 120)}</p>}
+                  {input && <p className="text-sm text-slate-700"><span className="font-medium">Complaint:</span> {input.split('\n')[0].substring(0, 120)}</p>}
                   {response && <p className="text-sm text-slate-700"><span className="font-medium">AI assessment:</span> {response.substring(0, 200)}…</p>}
                   {selectedFacility && <p className="text-sm text-slate-700"><span className="font-medium">Facility:</span> {FACILITIES.find(f => f.key === selectedFacility)?.name}</p>}
+                  {summaryCopied && <p className="text-xs text-green-600 font-medium pt-1">✓ Paste this into the Google Meet chat so the doctor can read it</p>}
                 </div>
               ) : (
                 <p className="text-sm text-slate-400 italic">Complete a clinical assessment above — the patient summary will appear here before your call.</p>
