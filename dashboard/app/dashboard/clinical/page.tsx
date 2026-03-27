@@ -619,16 +619,15 @@ export default function ClinicalPage() {
           >
             {loading ? 'Analysing…' : 'Get Clinical Assessment'}
           </button>
-          {response && !loading && (
-            <button
-              type="button"
-              onClick={() => setShowSaveModal(true)}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-lg transition text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              Save to Patient Record
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setShowSaveModal(true)}
+            disabled={!response}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold px-5 py-2.5 rounded-lg transition text-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            Save to Patient Record
+          </button>
           {loading && (
             <span className="flex items-center gap-2 text-sm text-gray-500">
               <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -657,14 +656,6 @@ export default function ClinicalPage() {
             <div className="flex items-center gap-2">
               {loading && (
                 <span className="text-xs text-green-600 animate-pulse">Streaming…</span>
-              )}
-              {!loading && response && !saved && (
-                <button
-                  onClick={saveConsultation}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition"
-                >
-                  Save to records
-                </button>
               )}
               {saved && (
                 <span className="text-xs text-green-600 font-medium">Saved</span>
