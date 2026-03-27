@@ -714,13 +714,13 @@ export default function ClinicalPage() {
                 <p className="text-sm text-slate-400 italic">Complete a clinical assessment above — the patient summary will appear here before your call.</p>
               )}
               {/* Start call */}
-              <a href="https://meet.google.com/new" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm">
+              <a href="https://meet.google.com/rpu-xsdi-wot" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 Start Google Meet Call
               </a>
-              <p className="text-xs text-slate-400 text-center">Opens Google Meet in a new tab — share the link with the clinician to join</p>
+              <p className="text-xs text-slate-400 text-center">Connects directly to the Goroka General Hospital on-call desk</p>
             </div>
           </div>
         </div>
