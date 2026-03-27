@@ -180,6 +180,9 @@ export default function LoginPage() {
           <p className="text-center text-xs text-slate-400 mt-8">
             EDEN Connect · Evolved AI + MAI Canada + EHP PHA
           </p>
+          <p className="text-center text-xs text-slate-300 mt-2">
+            Proof of Concept · Alpha v1.0
+          </p>
         </div>
       </div>
     </div>
