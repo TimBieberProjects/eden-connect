@@ -87,11 +87,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         href={href}
         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
           active
-            ? 'bg-indigo-50 text-indigo-700'
-            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+            ? 'bg-indigo-600 text-white'
+            : 'text-slate-300 hover:bg-slate-700 hover:text-white'
         }`}
       >
-        <span className={active ? 'text-indigo-600' : 'text-slate-400'}>{icon}</span>
+        <span className={active ? 'text-white' : 'text-slate-400'}>{icon}</span>
         <span className="flex-1">{label}</span>
         {locked && !active && <LockIcon />}
       </Link>
@@ -101,18 +101,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
-      <aside className="w-60 bg-white border-r border-slate-100 flex flex-col flex-shrink-0 fixed h-full z-20">
+      <aside className="w-60 bg-slate-800 border-r border-slate-700 flex flex-col flex-shrink-0 fixed h-full z-20">
 
         {/* Brand */}
-        <div className="px-5 py-5 border-b border-slate-100">
+        <div className="px-5 py-5 border-b border-slate-700">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0 shadow-sm">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </div>
             <div>
-              <div className="font-semibold text-sm text-slate-900">EDEN Connect</div>
+              <div className="font-semibold text-sm text-white">EDEN Connect</div>
               <div className="text-xs text-slate-400">Eastern Highlands PNG</div>
             </div>
           </div>
@@ -120,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">Platform</p>
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2">Platform</p>
 
           {/* Community Map */}
           {navItem('/dashboard/map', 'Community Map', (
@@ -134,11 +134,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={() => setSurveysOpen(o => !o)}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
               surveysActive
-                ? 'bg-indigo-50 text-indigo-700'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
             }`}
           >
-            <span className={surveysActive ? 'text-indigo-600' : 'text-slate-400'}>
+            <span className={surveysActive ? 'text-white' : 'text-slate-400'}>
               <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
@@ -153,7 +153,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
 
           {surveysOpen && (
-            <div className="ml-3 pl-3 border-l border-slate-100 space-y-0.5">
+            <div className="ml-3 pl-3 border-l border-slate-600 space-y-0.5">
               {SURVEYS_ITEMS.map(({ href, label, icon, locked }) => {
                 const active = pathname === href || pathname.startsWith(href);
                 return (
@@ -162,11 +162,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href={href}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       active
-                        ? 'bg-indigo-50 text-indigo-700'
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                     }`}
                   >
-                    <span className={active ? 'text-indigo-600' : 'text-slate-400'}>{icon}</span>
+                    <span className={active ? 'text-white' : 'text-slate-400'}>{icon}</span>
                     <span className="flex-1">{label}</span>
                     {locked && !active && <LockIcon />}
                   </Link>
@@ -191,10 +191,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-slate-100">
+        <div className="px-3 py-4 border-t border-slate-700">
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition"
           >
             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
