@@ -105,6 +105,59 @@ export default function ClinicalPage() {
   const [listening, setListening] = useState(false);
   const [saved, setSaved] = useState(false);
   const [soapMode, setSoapMode] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveMode, setSaveMode] = useState<'new' | 'existing'>('new');
+  const [saveFirstName, setSaveFirstName] = useState('');
+  const [saveLastName, setSaveLastName] = useState('');
+  const [saveSearch, setSaveSearch] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  function buildVisit() {
+    const today = new Date().toISOString().split('T')[0];
+    return {
+      id: Date.now().toString(),
+      date: today,
+      provider: 'Clinical Copilot AI',
+      facility: selectedFacility ? FACILITIES[selectedFacility].name : 'Field Assessment',
+      chief_complaint: patientName ? `Assessment for ${patientName}` : input.split('\n')[0].substring(0, 80),
+      soap: { s: input, o: '', a: '', p: response },
+      vitals: { date: today, temp: '—', hr: '—', rr: '—', bp: '—', spo2: '—', weight: '—' },
+      triage: (response.includes('PINK') ? 'PINK' : response.includes('YELLOW') ? 'YELLOW' : 'GREEN') as 'PINK' | 'YELLOW' | 'GREEN',
+      referral: response.toLowerCase().includes('refer'),
+      medications: [],
+    };
+  }
+
+  function handleSaveRecord() {
+    const visit = buildVisit();
+    if (saveMode === 'new') {
+      const name = `${saveFirstName} ${saveLastName}`.trim() || patientName || 'Unknown Patient';
+      const initials = `${saveFirstName[0] ?? 'U'}${saveLastName[0] ?? 'P'}`.toUpperCase();
+      const newPatient = {
+        id: `cp-${Date.now()}`,
+        name, initials,
+        age: patientAge || '—', sex: patientSex || '—', dob: '—',
+        village: '—', district: '—', province: '—',
+        bloodType: '—', allergies: [], conditions: [], medications: [],
+        visits: [visit],
+        aiSummary: 'Record created from Clinical Copilot assessment.',
+        communityStats: { topConditions: [], malariaPrevalence: '—', malnutritionRate: '—', activeCases: 0 },
+        rxCheck: 'Run prescription check from Patient Records.',
+        lastTriage: visit.triage,
+      };
+      const existing = JSON.parse(localStorage.getItem('eden_new_patients') || '[]');
+      localStorage.setItem('eden_new_patients', JSON.stringify([newPatient, ...existing]));
+    } else {
+      // Add visit to existing patient by name match
+      const existingVisits = JSON.parse(localStorage.getItem('eden_new_visits') || '{}');
+      const matchId = saveSearch.trim();
+      if (!existingVisits[matchId]) existingVisits[matchId] = [];
+      existingVisits[matchId].unshift(visit);
+      localStorage.setItem('eden_new_visits', JSON.stringify(existingVisits));
+    }
+    setSaveSuccess(true);
+    setTimeout(() => { setShowSaveModal(false); setSaveSuccess(false); setSaveFirstName(''); setSaveLastName(''); setSaveSearch(''); }, 1800);
+  }
   const [selectedFacility, setSelectedFacility] = useState<FacilityKey | null>(null);
   const responseRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -455,6 +508,62 @@ export default function ClinicalPage() {
           </div>
         )}
 
+        {/* Save to Patient Record modal */}
+        {showSaveModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h2 className="font-semibold text-slate-900">Save to Patient Record</h2>
+                <button onClick={() => setShowSaveModal(false)} className="text-slate-400 hover:text-slate-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                {saveSuccess ? (
+                  <div className="flex flex-col items-center gap-3 py-6">
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <p className="font-semibold text-slate-900">Saved successfully</p>
+                    <p className="text-sm text-slate-500">Visit and SOAP notes added to Patient Records</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex rounded-lg border border-slate-200 overflow-hidden text-sm font-medium">
+                      <button onClick={() => setSaveMode('new')} className={`flex-1 py-2 transition ${saveMode === 'new' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>New Patient</button>
+                      <button onClick={() => setSaveMode('existing')} className={`flex-1 py-2 transition ${saveMode === 'existing' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Existing Patient</button>
+                    </div>
+                    {saveMode === 'new' ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">First Name</label>
+                          <input value={saveFirstName} onChange={e => setSaveFirstName(e.target.value)} placeholder={patientName.split(' ')[0] || 'First'} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Last Name</label>
+                          <input value={saveLastName} onChange={e => setSaveLastName(e.target.value)} placeholder={patientName.split(' ')[1] || 'Last'} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Patient ID or Name</label>
+                        <input value={saveSearch} onChange={e => setSaveSearch(e.target.value)} placeholder="Enter patient ID to add visit to their record" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                        <p className="text-xs text-slate-400 mt-1">The visit and SOAP notes will be added under this patient's record</p>
+                      </div>
+                    )}
+                    <div className="bg-indigo-50 rounded-lg p-3 text-xs text-indigo-700 border border-indigo-100">
+                      <span className="font-semibold">Will save:</span> Today's visit with chief complaint, full SOAP notes from the clinical input, and the AI treatment plan.
+                    </div>
+                    <button onClick={handleSaveRecord} disabled={saveMode === 'new' && !saveFirstName && !patientName} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-semibold py-2.5 rounded-xl text-sm transition">
+                      Save to Patient Records
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-3">
           <button
             type="submit"
@@ -463,6 +572,16 @@ export default function ClinicalPage() {
           >
             {loading ? 'Analysing…' : 'Get Clinical Assessment'}
           </button>
+          {response && !loading && (
+            <button
+              type="button"
+              onClick={() => setShowSaveModal(true)}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-lg transition text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              Save to Patient Record
+            </button>
+          )}
           {loading && (
             <span className="flex items-center gap-2 text-sm text-gray-500">
               <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />

@@ -414,7 +414,16 @@ function SoapBlock({
 const EMPTY_FORM = { firstName: '', lastName: '', dob: '', sex: '', village: '', district: '', province: '', phone: '', guardian: '', bloodType: '', allergies: '', conditions: '', medications: '' };
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState<Patient[]>(PATIENTS);
+  const [patients, setPatients] = useState<Patient[]>(() => {
+    if (typeof window === 'undefined') return PATIENTS;
+    const newPats: Patient[] = JSON.parse(localStorage.getItem('eden_new_patients') || '[]');
+    const newVisits: Record<string, any[]> = JSON.parse(localStorage.getItem('eden_new_visits') || '{}');
+    const merged = PATIENTS.map(p => ({
+      ...p,
+      visits: [...(newVisits[p.id] || []), ...p.visits],
+    }));
+    return [...newPats, ...merged];
+  });
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'visits' | 'ai'>('overview');
