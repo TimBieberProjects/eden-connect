@@ -118,7 +118,7 @@ export default function ClinicalPage() {
       id: Date.now().toString(),
       date: today,
       provider: 'Clinical Copilot AI',
-      facility: selectedFacility ? FACILITIES[selectedFacility].name : 'Field Assessment',
+      facility: selectedFacility ? (FACILITIES.find(f => f.key === selectedFacility)?.name ?? 'Field Assessment') : 'Field Assessment',
       chief_complaint: patientName ? `Assessment for ${patientName}` : input.split('\n')[0].substring(0, 80),
       soap: { s: input, o: '', a: '', p: response },
       vitals: { date: today, temp: '—', hr: '—', rr: '—', bp: '—', spo2: '—', weight: '—' },
