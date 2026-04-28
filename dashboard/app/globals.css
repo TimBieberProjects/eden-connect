@@ -1,5 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 @import 'mapbox-gl/dist/mapbox-gl.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* N243 — production EDEN Connect brand tokens (mirrored, not authoritative). */
+:root {
+  --color-navy: #0B2545;
+  --color-eden-blue: #2F6FB2;
+  --color-eden-mid-blue: #1E4F8C;
+  --color-eden-teal: #4FE0C8;
+  --color-eden-white: #F5F7FA;
+  --color-eden-slate: #8899AA;
+  --color-eden-pale-blue: #E8EEF8;
+  --color-eden-amber: #F5A623;
+}

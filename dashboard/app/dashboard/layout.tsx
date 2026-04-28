@@ -1,114 +1,177 @@
 'use client';
 
+// N243 — Visual mirror of production EDEN Connect /admin shell. Sidebar
+// structure, header, and design tokens replicate prod so a Phase 2 demo
+// can switch URLs between this POC and edenconnect.health/admin without
+// a visible seam. The upper nav items above the "Phase 2" divider are
+// set-dressing: a few link to existing POC routes (Map, Surveys subs);
+// the rest are href="#" stubs (Dashboard root, Insights, Directory subs,
+// Settings) because POC has no equivalent and the brief is explicit
+// that these don't need to function on click during the demo.
+//
+// Phase 2 section at the bottom routes to POC's existing functional
+// pages: Patient Records (/dashboard/patients), Telehealth, Clinical
+// Copilot. Names kept POC-native because the brief said "prefer the
+// POC's own naming if reasonable."
+
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
-const LockIcon = () => (
-  <svg className="w-3 h-3 text-slate-300 ml-auto flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-  </svg>
+// ────────────────────────────────────────────────────────────────────
+// Inline icon set (mirrors prod's I/Dashboard/Surveys/Insights/etc.).
+// ────────────────────────────────────────────────────────────────────
+function I({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+const DashboardIcon = ({ className }: { className?: string }) => (
+  <I className={className}>
+    <rect x="3" y="3" width="7" height="9" rx="1" />
+    <rect x="14" y="3" width="7" height="5" rx="1" />
+    <rect x="14" y="12" width="7" height="9" rx="1" />
+    <rect x="3" y="16" width="7" height="5" rx="1" />
+  </I>
+);
+const SurveysIcon = ({ className }: { className?: string }) => (
+  <I className={className}>
+    <path d="M9 11l3 3L22 4" />
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+  </I>
+);
+const InsightsIcon = ({ className }: { className?: string }) => (
+  <I className={className}>
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </I>
+);
+const DirectoryIcon = ({ className }: { className?: string }) => (
+  <I className={className}>
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </I>
+);
+const MapIcon = ({ className }: { className?: string }) => (
+  <I className={className}>
+    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+    <line x1="8" y1="2" x2="8" y2="18" />
+    <line x1="16" y1="6" x2="16" y2="22" />
+  </I>
+);
+const GearIcon = ({ className }: { className?: string }) => (
+  <I className={className}>
+    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+  </I>
+);
+// Phase 2 icons.
+const PatientsIcon = ({ className }: { className?: string }) => (
+  <I className={className}>
+    <circle cx="12" cy="7" r="4" />
+    <path d="M5 21a7 7 0 0 1 14 0" />
+  </I>
+);
+const TelehealthIcon = ({ className }: { className?: string }) => (
+  <I className={className}>
+    <rect x="3" y="6" width="13" height="12" rx="2" />
+    <path d="M16 10l5-3v10l-5-3z" />
+  </I>
+);
+const StethoscopeIcon = ({ className }: { className?: string }) => (
+  <I className={className}>
+    <path d="M6 3v6a4 4 0 0 0 8 0V3" />
+    <circle cx="18" cy="14" r="2" />
+    <path d="M10 13v3a5 5 0 0 0 5 5h1a2 2 0 0 0 2-2v-2" />
+  </I>
 );
 
-const ChevronIcon = ({ open }: { open: boolean }) => (
-  <svg
-    className={`w-3.5 h-3.5 flex-shrink-0 text-slate-300 transition-transform ${open ? 'rotate-180' : ''}`}
-    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-  </svg>
-);
-
-const SURVEYS_ITEMS = [
-  {
-    href: '/dashboard/baseline-survey',
-    label: 'Baseline Survey',
-    locked: false,
-    icon: (
-      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/quarterly-survey',
-    label: 'Quarterly Survey',
-    locked: false,
-    icon: (
-      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
+const SURVEY_SUBS = [
+  { label: 'Baseline Surveys', href: '/dashboard/baseline-survey' },
+  { label: 'Quarterly Reports', href: '/dashboard/quarterly-survey' },
+  { label: 'Human Flourishing', href: '#' },
 ];
 
-const REPORTS_ITEMS = [
-  {
-    href: '/dashboard/overview',
-    label: 'Health Overview',
-    locked: true,
-    icon: (
-      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/baseline',
-    label: 'Baseline Reports',
-    locked: true,
-    icon: (
-      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/quarterly',
-    label: 'Quarterly Reports',
-    locked: true,
-    icon: (
-      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/ai-query',
-    label: 'AI Reports',
-    locked: true,
-    icon: (
-      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-      </svg>
-    ),
-  },
+const DIRECTORY_SUBS = [
+  { label: 'Health Promoters', href: '#' },
+  { label: 'Health Facilities', href: '#' },
+  { label: 'Villages', href: '#' },
 ];
+
+// Demo identity for the user-info footer + header dropdown.
+// Hardcoded because the upper sidebar is set-dressing — Supabase auth
+// doesn't carry name/role/email in the same shape as production.
+const DEMO_USER = {
+  name: 'Tim Bieber',
+  email: 'tim@evolvedgrowth.ai',
+  role: 'Tech Admin',
+};
+
+function preventNoop(e: React.MouseEvent) {
+  e.preventDefault();
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [surveysOpen, setSurveysOpen] = useState(false);
+  const [directoryOpen, setDirectoryOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
 
-  const surveysHrefs = SURVEYS_ITEMS.map(i => i.href);
-  const surveysActive = surveysHrefs.some(h => pathname === h || pathname.startsWith(h));
-  const [surveysOpen, setSurveysOpen] = useState(surveysActive);
+  useEffect(() => { setMobileOpen(false); setUserMenuOpen(false); }, [pathname]);
 
-  const reportsHrefs = REPORTS_ITEMS.map(i => i.href);
-  const reportsActive = reportsHrefs.some(h => pathname === h || pathname.startsWith(h));
-  const [reportsOpen, setReportsOpen] = useState(reportsActive);
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (!dropRef.current) return;
+      if (!dropRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [userMenuOpen]);
+
+  const surveysActive =
+    pathname.startsWith('/dashboard/baseline-survey') ||
+    pathname.startsWith('/dashboard/quarterly-survey');
+  useEffect(() => { if (surveysActive) setSurveysOpen(true); }, [surveysActive]);
+
+  function isActive(href: string): boolean {
+    if (href === '#' || !href) return false;
+    return pathname === href || pathname.startsWith(href + '/');
+  }
 
   async function handleSignOut() {
+    setUserMenuOpen(false);
     await supabase.auth.signOut();
     router.push('/login');
     router.refresh();
   }
 
   const pageLabel =
-    pathname === '/dashboard/map' ? 'Community Map' :
-    pathname.startsWith('/dashboard/baseline-survey') ? 'Baseline Survey' :
-    pathname.startsWith('/dashboard/quarterly-survey') ? 'Quarterly Survey' :
+    pathname === '/dashboard' ? 'Dashboard' :
+    pathname.startsWith('/dashboard/map') ? 'Map' :
+    pathname.startsWith('/dashboard/baseline-survey') ? 'Baseline Surveys' :
+    pathname.startsWith('/dashboard/quarterly-survey') ? 'Quarterly Reports' :
     pathname.startsWith('/dashboard/overview') ? 'Health Overview' :
     pathname.startsWith('/dashboard/baseline') ? 'Baseline Reports' :
     pathname.startsWith('/dashboard/quarterly') ? 'Quarterly Reports' :
@@ -118,176 +181,299 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     pathname.startsWith('/dashboard/patients') ? 'Patient Records' :
     'Dashboard';
 
-  const navItem = (href: string, label: string, icon: React.ReactNode, locked = false) => {
-    const active = pathname === href || (href !== '/dashboard/map' && pathname.startsWith(href));
-    return (
-      <Link
-        key={href}
-        href={href}
-        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-          active
-            ? 'bg-indigo-600 text-white'
-            : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-        }`}
-      >
-        <span className={active ? 'text-white' : 'text-slate-400'}>{icon}</span>
-        <span className="flex-1">{label}</span>
-        {locked && !active && <LockIcon />}
-      </Link>
-    );
-  };
-
-  const collapsibleSection = (
-    label: string,
-    icon: React.ReactNode,
-    isActive: boolean,
-    isOpen: boolean,
-    toggle: () => void,
-    items: typeof SURVEYS_ITEMS
-  ) => (
-    <>
-      <button
-        onClick={toggle}
-        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-          isActive
-            ? 'text-white bg-slate-700'
-            : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-        }`}
-      >
-        <span className={isActive ? 'text-indigo-400' : 'text-slate-400'}>{icon}</span>
-        <span className="flex-1 text-left">{label}</span>
-        <ChevronIcon open={isOpen} />
-      </button>
-
-      {isOpen && (
-        <div className="ml-3 pl-3 border-l border-slate-600 space-y-0.5">
-          {items.map(({ href, label: itemLabel, icon: itemIcon, locked }) => {
-            const active = pathname === href || pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                }`}
-              >
-                <span className={active ? 'text-white' : 'text-slate-400'}>{itemIcon}</span>
-                <span className="flex-1">{itemLabel}</span>
-                {locked && !active && <LockIcon />}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </>
-  );
+  const iconCls = 'w-[18px] h-[18px] flex-shrink-0';
+  const linkCls = (active: boolean) =>
+    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+      active
+        ? 'bg-eden-teal/10 text-eden-teal font-medium'
+        : 'text-eden-slate hover:text-eden-white hover:bg-eden-white/5'
+    }`;
+  const subCls = (active: boolean) =>
+    `block px-3 py-2 rounded-lg text-xs transition-colors ${
+      active
+        ? 'bg-eden-teal/10 text-eden-teal font-medium'
+        : 'text-eden-slate hover:text-eden-white hover:bg-eden-white/5'
+    }`;
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      {/* Sidebar */}
-      <aside className="w-60 bg-slate-800 border-r border-slate-700 flex flex-col flex-shrink-0 fixed h-full z-20">
+    <div className="min-h-screen bg-eden-pale-blue flex flex-col sm:flex-row">
+      {/* ── Mobile top bar ── */}
+      <header className="sm:hidden bg-navy text-eden-white px-4 py-3 flex items-center justify-between z-30 border-b border-eden-white/10 w-full">
+        <button
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+          className="w-10 h-10 flex items-center justify-center text-eden-white text-2xl"
+        >
+          ☰
+        </button>
+        <Link href="/dashboard">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="EDEN Connect" className="h-8 w-auto" />
+        </Link>
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] text-eden-teal hover:text-eden-teal/80"
+          title="View site"
+        >
+          Site ↗
+        </a>
+      </header>
 
+      {mobileOpen && (
+        <div
+          className="sm:hidden fixed inset-0 bg-black/60 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* ── Sidebar ── */}
+      <aside
+        className={`bg-navy flex flex-col z-50 sm:w-56 lg:w-64 sm:min-h-screen sm:relative sm:translate-x-0 fixed inset-y-0 left-0 w-72 transition-transform ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'
+        }`}
+      >
         {/* Brand */}
-        <div className="px-5 py-5 border-b border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </div>
-            <div>
-              <div className="font-semibold text-sm text-white">EDEN Connect</div>
-              <div className="text-xs text-slate-400">Eastern Highlands PNG</div>
-            </div>
+        <div className="px-5 py-4 border-b border-eden-white/10">
+          <Link href="/dashboard">
+            <Image src="/logo.png" alt="EDEN Connect" width={240} height={60} className="h-12 w-auto" />
+          </Link>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-eden-slate text-xs">Admin Dashboard</p>
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-eden-teal hover:text-eden-teal/80 transition-colors flex items-center gap-1"
+              title="View public map (opens in new tab)"
+            >
+              View site ↗
+            </a>
           </div>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2">Platform</p>
+          {/* Dashboard (set-dressing — no functional /admin equivalent in POC) */}
+          <a href="#" onClick={preventNoop} className={linkCls(false)}>
+            <DashboardIcon className={iconCls} /> Dashboard
+          </a>
 
-          {/* Community Map */}
-          {navItem('/dashboard/map', 'Community Map', (
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-          ))}
-
-          {/* Surveys — collapsible, not locked */}
-          {collapsibleSection(
-            'Surveys',
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-            </svg>,
-            surveysActive,
-            surveysOpen,
-            () => setSurveysOpen(o => !o),
-            SURVEYS_ITEMS
+          {/* Surveys (expandable, partial routing) */}
+          <button
+            onClick={() => setSurveysOpen((o) => !o)}
+            className={`w-full ${linkCls(surveysActive && !surveysOpen)} justify-between`}
+          >
+            <span className="flex items-center gap-3">
+              <SurveysIcon className={iconCls} /> Surveys
+            </span>
+            <span className={`text-xs transition-transform ${surveysOpen ? 'rotate-90' : ''}`}>›</span>
+          </button>
+          {surveysOpen && (
+            <div className="ml-7 pl-3 border-l border-eden-white/10 space-y-0.5">
+              {SURVEY_SUBS.map((s) => (
+                s.href === '#' ? (
+                  <a key={s.label} href="#" onClick={preventNoop} className={subCls(false)}>
+                    {s.label}
+                  </a>
+                ) : (
+                  <Link key={s.href} href={s.href} className={subCls(isActive(s.href))}>
+                    {s.label}
+                  </Link>
+                )
+              ))}
+            </div>
           )}
 
-          {/* Reports — collapsible, locked */}
-          {collapsibleSection(
-            'Reports',
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>,
-            reportsActive,
-            reportsOpen,
-            () => setReportsOpen(o => !o),
-            REPORTS_ITEMS
+          {/* Insights (set-dressing) */}
+          <a href="#" onClick={preventNoop} className={linkCls(false)}>
+            <InsightsIcon className={iconCls} /> Insights
+          </a>
+
+          {/* Map (functional — POC has /dashboard/map) */}
+          <Link href="/dashboard/map" className={linkCls(isActive('/dashboard/map'))}>
+            <MapIcon className={iconCls} /> Map
+          </Link>
+
+          {/* Directory (set-dressing — no POC equivalents) */}
+          <button
+            onClick={() => setDirectoryOpen((o) => !o)}
+            className={`w-full ${linkCls(false)} justify-between`}
+          >
+            <span className="flex items-center gap-3">
+              <DirectoryIcon className={iconCls} /> Directory
+            </span>
+            <span className={`text-xs transition-transform ${directoryOpen ? 'rotate-90' : ''}`}>›</span>
+          </button>
+          {directoryOpen && (
+            <div className="ml-7 pl-3 border-l border-eden-white/10 space-y-0.5">
+              {DIRECTORY_SUBS.map((d) => (
+                <a key={d.label} href="#" onClick={preventNoop} className={subCls(false)}>
+                  {d.label}
+                </a>
+              ))}
+            </div>
           )}
 
-          {/* Clinical Copilot */}
-          {navItem('/dashboard/clinical', 'Clinical Copilot', (
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          ), true)}
+          {/* ── System divider ── */}
+          <div className="my-3 border-t border-eden-white/10" />
 
-          {/* Telehealth */}
-          {navItem('/dashboard/telehealth', 'Telehealth', (
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          ))}
+          <a href="#" onClick={preventNoop} className={linkCls(false)}>
+            <GearIcon className={iconCls} /> Settings
+          </a>
 
-          {/* Patient Records */}
-          {navItem('/dashboard/patients', 'Patient Records', (
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          ), true)}
+          {/* ── Phase 2 section ── */}
+          <div className="mt-6">
+            <div className="border-t border-eden-white/10 pt-4 px-3 mb-2">
+              <p className="text-[10px] font-bold tracking-[0.12em] uppercase text-eden-teal">
+                Phase 2
+              </p>
+            </div>
+            <Link
+              href="/dashboard/patients"
+              className={linkCls(isActive('/dashboard/patients'))}
+            >
+              <PatientsIcon className={iconCls} /> Patient Records
+            </Link>
+            <Link
+              href="/dashboard/telehealth"
+              className={linkCls(isActive('/dashboard/telehealth'))}
+            >
+              <TelehealthIcon className={iconCls} /> Telehealth
+            </Link>
+            <Link
+              href="/dashboard/clinical"
+              className={linkCls(isActive('/dashboard/clinical'))}
+            >
+              <StethoscopeIcon className={iconCls} /> Clinical Copilot
+            </Link>
+          </div>
         </nav>
 
-        {/* Footer */}
-        <div className="px-3 py-4 border-t border-slate-700">
+        {/* User-info footer (mirrors prod sidebar foot exactly) */}
+        <div className="px-4 py-4 border-t border-eden-white/10">
+          <a
+            href="#"
+            onClick={preventNoop}
+            className="block mb-3 -mx-2 px-2 py-2 rounded-lg hover:bg-eden-white/5 transition-colors"
+            title="View my profile"
+          >
+            <p className="text-eden-white text-sm font-medium truncate">{DEMO_USER.name}</p>
+            <p className="text-eden-slate text-xs truncate">{DEMO_USER.email}</p>
+            <span className="inline-block mt-1 px-2 py-0.5 bg-eden-teal/10 text-eden-teal text-xs rounded">
+              {DEMO_USER.role}
+            </span>
+          </a>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition"
+            className="w-full text-left px-3 py-2 text-sm text-eden-slate hover:text-eden-amber hover:bg-eden-amber/5 rounded-lg transition-colors"
           >
-            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span>Sign out</span>
+            Sign Out
           </button>
-          <p className="text-xs text-slate-300 px-3 mt-3">Evolved AI · MAI Canada</p>
         </div>
       </aside>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col ml-60">
-        {/* Top bar */}
-        <header className="h-14 bg-white border-b border-slate-100 flex items-center px-8 flex-shrink-0 sticky top-0 z-10">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-900 font-semibold">{pageLabel}</span>
-          </div>
-          <div className="ml-auto flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-medium border border-emerald-100">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-              Live
-            </span>
+      {/* ── Main pane ── */}
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+        {/* AdminHeader — title + user dropdown (mirrors prod). */}
+        <header className="bg-white border-b border-eden-pale-blue px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <h1 className="text-lg sm:text-xl font-bold text-navy truncate">{pageLabel}</h1>
+          <div className="relative" ref={dropRef}>
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((v) => !v)}
+              className="flex items-center gap-2 rounded-full pl-1 pr-2 py-1 hover:bg-eden-pale-blue/50 transition-colors"
+              aria-haspopup="menu"
+              aria-expanded={userMenuOpen}
+              title={DEMO_USER.name}
+            >
+              <span className="w-[34px] h-[34px] rounded-full bg-eden-teal/20 text-navy font-bold text-sm flex items-center justify-center">
+                {DEMO_USER.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+              </span>
+              <span className="hidden sm:flex flex-col items-end min-w-0 max-w-[180px]">
+                <span className="text-xs text-navy font-medium truncate">{DEMO_USER.name}</span>
+                <span className="text-[10px] text-eden-slate">{DEMO_USER.role}</span>
+              </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`w-3 h-3 text-eden-slate transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {userMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-2 w-56 bg-white border border-eden-pale-blue rounded-xl shadow-lg overflow-hidden z-50"
+              >
+                <div className="px-4 py-3 border-b border-eden-pale-blue">
+                  <p className="text-sm font-bold text-navy truncate">{DEMO_USER.name}</p>
+                  <p className="text-xs text-eden-slate truncate">{DEMO_USER.email}</p>
+                </div>
+                <a
+                  href="#"
+                  onClick={(e) => { preventNoop(e); setUserMenuOpen(false); }}
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-navy hover:bg-eden-pale-blue/40"
+                  role="menuitem"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-4 h-4 flex-shrink-0"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  My profile
+                </a>
+                <a
+                  href="#"
+                  onClick={(e) => { preventNoop(e); setUserMenuOpen(false); }}
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-navy hover:bg-eden-pale-blue/40"
+                  role="menuitem"
+                >
+                  <GearIcon className="w-4 h-4 flex-shrink-0" /> Settings
+                </a>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-eden-amber hover:bg-eden-amber/5 border-t border-eden-pale-blue"
+                  role="menuitem"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-4 h-4 flex-shrink-0"
+                    aria-hidden="true"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
