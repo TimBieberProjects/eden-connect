@@ -296,7 +296,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <MapIcon className={iconCls} /> Map
           </Link>
 
-          {/* Directory (set-dressing — no POC equivalents) */}
+          {/* Directory (set-dressing — no POC equivalents). Static amber "3"
+              badge mirrors prod's unreviewed-villages indicator visually. */}
           <button
             onClick={() => setDirectoryOpen((o) => !o)}
             className={`w-full ${linkCls(false)} justify-between`}
@@ -304,13 +305,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="flex items-center gap-3">
               <DirectoryIcon className={iconCls} /> Directory
             </span>
-            <span className={`text-xs transition-transform ${directoryOpen ? 'rotate-90' : ''}`}>›</span>
+            <span className="flex items-center gap-2">
+              <span className="bg-eden-amber text-navy text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                3
+              </span>
+              <span className={`text-xs transition-transform ${directoryOpen ? 'rotate-90' : ''}`}>›</span>
+            </span>
           </button>
           {directoryOpen && (
             <div className="ml-7 pl-3 border-l border-eden-white/10 space-y-0.5">
               {DIRECTORY_SUBS.map((d) => (
-                <a key={d.label} href="#" onClick={preventNoop} className={subCls(false)}>
-                  {d.label}
+                <a
+                  key={d.label}
+                  href="#"
+                  onClick={preventNoop}
+                  className={`${subCls(false)} ${d.label === 'Villages' ? 'flex items-center justify-between gap-2' : ''}`}
+                >
+                  <span>{d.label}</span>
+                  {d.label === 'Villages' && (
+                    <span className="bg-eden-amber text-navy text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                      3
+                    </span>
+                  )}
                 </a>
               ))}
             </div>

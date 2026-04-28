@@ -394,32 +394,32 @@ export default function ClinicalPage() {
                   onClick={() => setSelectedFacility(isSelected ? null : f.key)}
                   className={`text-left p-4 rounded-xl border-2 transition-all ${
                     isSelected
-                      ? 'border-indigo-500 bg-indigo-50 shadow-sm'
-                      : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-slate-50'
+                      ? 'border-eden-teal bg-eden-pale-blue shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-eden-blue/30 hover:bg-slate-50'
                   }`}
                 >
                   <div
-                    className={`mb-2 ${isSelected ? 'text-indigo-600' : 'text-slate-500'}`}
+                    className={`mb-2 ${isSelected ? 'text-navy' : 'text-slate-500'}`}
                   >
                     {f.icon}
                   </div>
                   <div
                     className={`font-semibold text-sm ${
-                      isSelected ? 'text-indigo-800' : 'text-slate-800'
+                      isSelected ? 'text-navy' : 'text-slate-800'
                     }`}
                   >
                     {f.name}
                   </div>
                   <div
                     className={`text-xs mt-0.5 leading-snug ${
-                      isSelected ? 'text-indigo-500' : 'text-slate-400'
+                      isSelected ? 'text-eden-blue' : 'text-slate-400'
                     }`}
                   >
                     {f.subtitle}
                   </div>
                   {isSelected && (
                     <div className="mt-2">
-                      <span className="inline-flex items-center gap-1 text-xs bg-indigo-600 text-white rounded-full px-2 py-0.5 font-medium">
+                      <span className="inline-flex items-center gap-1 text-xs bg-eden-teal text-navy rounded-full px-2 py-0.5 font-medium">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path
                             fillRule="evenodd"
@@ -558,7 +558,7 @@ export default function ClinicalPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                <h2 className="font-semibold text-slate-900">Save to Patient Record</h2>
+                <h2 className="font-semibold text-navy">Save to Patient Record</h2>
                 <button onClick={() => setShowSaveModal(false)} className="text-slate-400 hover:text-slate-600">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -569,24 +569,24 @@ export default function ClinicalPage() {
                     <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
                       <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                     </div>
-                    <p className="font-semibold text-slate-900">Saved successfully</p>
+                    <p className="font-semibold text-navy">Saved successfully</p>
                     <p className="text-sm text-slate-500">Visit and SOAP notes added to Patient Records</p>
                   </div>
                 ) : (
                   <>
                     <div className="flex rounded-lg border border-slate-200 overflow-hidden text-sm font-medium">
-                      <button onClick={() => setSaveMode('new')} className={`flex-1 py-2 transition ${saveMode === 'new' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>New Patient</button>
-                      <button onClick={() => setSaveMode('existing')} className={`flex-1 py-2 transition ${saveMode === 'existing' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Existing Patient</button>
+                      <button onClick={() => setSaveMode('new')} className={`flex-1 py-2 transition ${saveMode === 'new' ? 'bg-eden-teal text-navy' : 'text-slate-500 hover:bg-slate-50'}`}>New Patient</button>
+                      <button onClick={() => setSaveMode('existing')} className={`flex-1 py-2 transition ${saveMode === 'existing' ? 'bg-eden-teal text-navy' : 'text-slate-500 hover:bg-slate-50'}`}>Existing Patient</button>
                     </div>
                     {saveMode === 'new' ? (
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">First Name</label>
-                          <input value={saveFirstName} onChange={e => setSaveFirstName(e.target.value)} placeholder={patientName.split(' ')[0] || 'First'} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                          <input value={saveFirstName} onChange={e => setSaveFirstName(e.target.value)} placeholder={patientName.split(' ')[0] || 'First'} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-eden-teal outline-none" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">Last Name</label>
-                          <input value={saveLastName} onChange={e => setSaveLastName(e.target.value)} placeholder={patientName.split(' ')[1] || 'Last'} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                          <input value={saveLastName} onChange={e => setSaveLastName(e.target.value)} placeholder={patientName.split(' ')[1] || 'Last'} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-eden-teal outline-none" />
                         </div>
                       </div>
                     ) : (
@@ -596,7 +596,7 @@ export default function ClinicalPage() {
                           value={saveSearch}
                           onChange={e => { setSaveSearch(e.target.value); setSelectedExistingId(null); }}
                           placeholder="Type name to search…"
-                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-eden-teal outline-none"
                         />
                         {saveSearch && !selectedExistingId && (
                           <div className="mt-1 border border-slate-200 rounded-lg overflow-hidden max-h-40 overflow-y-auto">
@@ -607,7 +607,7 @@ export default function ClinicalPage() {
                                 <button
                                   key={p.id}
                                   onClick={() => { setSelectedExistingId(p.id); setSaveSearch(p.name); }}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 border-b border-slate-100 last:border-0"
+                                  className="w-full text-left px-3 py-2 text-sm hover:bg-eden-pale-blue border-b border-slate-100 last:border-0"
                                 >
                                   <span className="font-medium text-slate-800">{p.name}</span>
                                   <span className="text-slate-400 ml-2 text-xs">{p.age} · {p.village}</span>
@@ -621,10 +621,10 @@ export default function ClinicalPage() {
                         )}
                       </div>
                     )}
-                    <div className="bg-indigo-50 rounded-lg p-3 text-xs text-indigo-700 border border-indigo-100">
+                    <div className="bg-eden-pale-blue rounded-lg p-3 text-xs text-navy border border-eden-pale-blue">
                       <span className="font-semibold">Will save:</span> Today's visit with chief complaint, full SOAP notes from the clinical input, and the AI treatment plan.
                     </div>
-                    <button onClick={handleSaveRecord} disabled={(saveMode === 'new' && !saveFirstName && !patientName) || (saveMode === 'existing' && !selectedExistingId)} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-semibold py-2.5 rounded-xl text-sm transition">
+                    <button onClick={handleSaveRecord} disabled={(saveMode === 'new' && !saveFirstName && !patientName) || (saveMode === 'existing' && !selectedExistingId)} className="w-full bg-eden-teal hover:bg-eden-teal/90 disabled:bg-eden-teal/40 text-navy font-bold py-2.5 rounded-lg text-sm transition">
                       Save to Patient Records
                     </button>
                   </>
@@ -646,7 +646,7 @@ export default function ClinicalPage() {
             type="button"
             onClick={() => setShowSaveModal(true)}
             disabled={!response}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold px-5 py-2.5 rounded-lg transition text-sm"
+            className="flex items-center gap-2 bg-eden-teal hover:bg-eden-teal/90 disabled:bg-slate-300 disabled:cursor-not-allowed text-navy font-bold px-5 py-2.5 rounded-lg transition text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             Save to Patient Record
@@ -731,7 +731,7 @@ export default function ClinicalPage() {
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Patient Summary</p>
                     <button
                       onClick={handleCopySummary}
-                      className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${summaryCopied ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}
+                      className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${summaryCopied ? 'bg-green-100 text-green-700' : 'bg-eden-teal/15 text-navy hover:bg-eden-teal/25'}`}
                     >
                       {summaryCopied ? (
                         <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Copied!</>
